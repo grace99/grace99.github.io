@@ -52,6 +52,8 @@ body {
     --font-family-monospace: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
 }
 html {
+    resize: both;
+    overflow: auto;
     font-family: sans-serif;
     line-height: 1.15;
     -webkit-text-size-adjust: 100%;

@@ -42,7 +42,7 @@ article, aside, figcaption, figure, footer, header, hgroup, main, nav, section {
     display: block;
 }
 .skew-menu ul li:first-child {
-    border-radius: 5px 0 0 5px;
+    border-radius: 5px 5px 5px 5px;
 }
 .skew-menu ul li {
     background: hsla(0,0%,100%,.5);
@@ -92,18 +92,13 @@ ul {
     line-height: inherit;
     white-space: nowrap;
 }
+
 a {
     font-weight: 250;
     text-decoration: none;
     background-color: transparent;
 }
-p, a {
-    font-family: Helvetica Neue,Helvetica,Arial,sans-serif;
-    font-size: 1.5rem;
-    font-weight: 250;
-    transition: opacity 1s ease;
-}
-p:hover, a:hover {
+a:hover {
     color: #ebd516;
     font-weight: 250;
 }

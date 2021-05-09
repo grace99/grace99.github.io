@@ -8,8 +8,9 @@ body {
     height: 100%;
 }
 p:hover {
-    background-color: yellow;
-    color: red;
+    color: #6f42c1;
+    font-size: 150%;
+    opacity: 0.5;
   }
 body {
     margin: 0;

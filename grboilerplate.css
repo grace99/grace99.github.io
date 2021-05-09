@@ -93,18 +93,18 @@ ul {
     white-space: nowrap;
 }
 a {
-    color: #007bff;
+    font-weight: 250;
     text-decoration: none;
     background-color: transparent;
 }
 p, a {
     font-family: Helvetica Neue,Helvetica,Arial,sans-serif;
     font-size: 1.5rem;
-    font-weight: 300;
+    font-weight: 250;
     transition: opacity 1s ease;
 }
 p:hover, a:hover {
-    color: #343a40;
+    color: #ebd516;
     font-weight: 250;
 }
 .modal-backdrop.in {

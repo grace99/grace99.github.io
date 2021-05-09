@@ -38,13 +38,6 @@ nav {
     -o-user-select: none;
     user-select: none;
 }
-nav {
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    -o-user-select: none;
-    user-select: none;
-}
 article, aside, figcaption, figure, footer, header, hgroup, main, nav, section {
     display: block;
 }
@@ -74,7 +67,7 @@ li {
     padding: 1em 2em;
     color: inherit;
     text-decoration: none;
-    transform: skew(25deg);
+    /*transform: skew(25deg);*/
 }
 a:link {
     font-style: bold;
@@ -83,7 +76,7 @@ a:link {
 }
 ul {
     display: block;
-    list-style-type: disc;
+    list-style-type: none;
     margin-block-start: 1em;
     margin-block-end: 1em;
     margin-inline-start: 0px;
@@ -104,13 +97,13 @@ a {
     text-decoration: none;
     background-color: transparent;
 }
-p {
+p, a {
     font-family: Helvetica Neue,Helvetica,Arial,sans-serif;
     font-size: 1.5rem;
     font-weight: 300;
     transition: opacity 1s ease;
 }
-p:hover {
+p:hover, a:hover {
     color: #343a40;
     font-weight: 250;
 }

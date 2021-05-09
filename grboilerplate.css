@@ -13,6 +13,32 @@ body {
     margin: 0;
     line-height: 1.5;
 }
+.skew-menu ul li a {
+    display: block;
+    padding: 1em 2em;
+    color: inherit;
+    text-decoration: none;
+    transform: skew(25deg);
+}
+a:link {
+    font-style: bold;
+    font-family: Arial;
+    font-size: 15px;
+}
+.navbar-brand {
+    display: inline-block;
+    padding-top: .3125rem;
+    padding-bottom: .3125rem;
+    margin-right: 1rem;
+    font-size: 1.25rem;
+    line-height: inherit;
+    white-space: nowrap;
+}
+a {
+    color: #007bff;
+    text-decoration: none;
+    background-color: transparent;
+}
 p {
     font-family: Helvetica Neue,Helvetica,Arial,sans-serif;
     font-size: 1.5rem;

@@ -5,18 +5,18 @@ body {
     /*background: url(https://i.ibb.co/pwzQpy3/IMG-3477.jpg) top no-repeat;*/
     background: url(https://i.ibb.co/C1NhK0J/sahatsakhantemple.jpg) center no-repeat;
     background-attachment: fixed;
-    background-size: cover;
-    background-color: #212529;
+    /*-background-size: cover;*/
+    background-color: black;
+    text-align: center;
+    color: white;
     height: 100%;
     margin: 0;
     line-height: 1.5;
-    color: #fff;
-    text-align: top left;
 }
 p {
     font-family: Helvetica Neue,Helvetica,Arial,sans-serif;
     font-size: 1.5rem;
-    font-weight: 200;
+    font-weight: 300;
     transition: opacity 1s ease;
 }
 p:hover {

@@ -9,7 +9,7 @@ body {
 }
 p:hover {
     color: #6f42c1;
-    font-weight: 100;
+    font-weight: 650;
     background-blend-mode: var(--purple);
 }
 body {

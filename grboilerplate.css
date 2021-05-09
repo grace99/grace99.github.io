@@ -1,6 +1,6 @@
 body {
     font-family: Helvetica Neue,Helvetica,Arial,sans-serif;
-    font-size: 2.5rem;
+    font-size: 2.0rem;
     font-weight: 400;
     /*background: url(https://i.ibb.co/pwzQpy3/IMG-3477.jpg) top no-repeat;*/
     background: url(https://i.ibb.co/C1NhK0J/sahatsakhantemple.jpg) center no-repeat;
@@ -11,7 +11,12 @@ body {
     margin: 0;
     line-height: 1.5;
     color: #fff;
-    text-align: left;
+    text-align: top left;
+}
+p {
+    font-family: Helvetica Neue,Helvetica,Arial,sans-serif;
+    font-size: 1.5rem;
+    font-weight: 200;
 }
 p:hover {
     color: #6f42c1;
@@ -21,7 +26,7 @@ p:hover {
 html {
     height: 100%;
     font-family: Helvetica Neue,Helvetica,Arial,sans-serif;
-    line-height: 1.15;
+    line-height: 1.5;
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: rgba(0,0,0,0);
 }

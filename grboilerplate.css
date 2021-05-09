@@ -8,7 +8,7 @@ body {
     /*-background-size: cover;*/
     background-color: black;
     text-align: center;
-    color: white;
+    color: dark var(--gray-dark);
     height: 100%;
     margin: 0;
     line-height: 1.5;

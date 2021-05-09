@@ -1,13 +1,13 @@
 body {
     font-family: Helvetica Neue,Helvetica,Arial,sans-serif;
-    font-size: 2.0rem;
-    font-weight: 400;
+    font-size: 1.5rem;
+    font-weight: 350;
     /*background: url(https://i.ibb.co/pwzQpy3/IMG-3477.jpg) top no-repeat;*/
     background: url(https://i.ibb.co/C1NhK0J/sahatsakhantemple.jpg) center no-repeat;
     background-attachment: fixed;
     /*-background-size: cover;*/
     background-color: black;
-    text-align: center;
+    text-align: left top;
     color: white;
     height: 100%;
     margin: 0;

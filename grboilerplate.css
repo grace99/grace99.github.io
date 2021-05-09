@@ -13,6 +13,62 @@ body {
     margin: 0;
     line-height: 1.5;
 }
+.navbar {
+    margin-bottom: 10px;
+    position: relative;
+    padding: .5rem 1rem;
+}
+.navbar, .navbar .container, .navbar .container-fluid, .navbar .container-lg, .navbar .container-md, .navbar .container-sm, .navbar .container-xl {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+.container, .container-fluid, .container-lg, .container-md, .container-sm, .container-xl {
+    width: 100%;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+}
+nav {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+}
+nav {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+}
+article, aside, figcaption, figure, footer, header, hgroup, main, nav, section {
+    display: block;
+}
+.skew-menu ul li:first-child {
+    border-radius: 7px 0 0 7px;
+}
+.skew-menu ul li {
+    background: hsla(0,0%,100%,.9);
+    float: left;
+    border-right: 1px solid #f5f5f5;
+    box-shadow: 0 1px 1px rgba(0,0,0,.1);
+    color: #555;
+    font-weight: bolder;
+    transition: all .3s linear;
+}
+nav li, nav ul {
+    outline: 0;
+    margin: 0;
+    padding: 0;
+}
+li {
+    display: list-item;
+    text-align: -webkit-match-parent;
+}
 .skew-menu ul li a {
     display: block;
     padding: 1em 2em;
@@ -24,6 +80,15 @@ a:link {
     font-style: bold;
     font-family: Arial;
     font-size: 15px;
+}
+ul {
+    display: block;
+    list-style-type: disc;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    padding-inline-start: 40px;
 }
 .navbar-brand {
     display: inline-block;

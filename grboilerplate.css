@@ -17,10 +17,14 @@ p {
     font-family: Helvetica Neue,Helvetica,Arial,sans-serif;
     font-size: 1.5rem;
     font-weight: 200;
+    transition: opacity 1s ease;
 }
 p:hover {
     color: #343a40;
     font-weight: 250;
+}
+.modal-backdrop.in {
+    opacity: 0.5;
 }
 html {
     height: 100%;

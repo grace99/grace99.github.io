@@ -70,7 +70,7 @@ li {
     text-decoration: none;
     /*transform: skew(25deg);*/
 }
-.skew-menu ul li a :hover {
+.skew-menu ul li a:hover {
     color: #080808;
     font-weight: 250;
 }

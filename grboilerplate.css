@@ -8,7 +8,7 @@ body {
     /*-background-size: cover;*/
     background-color: black;
     text-align: top;
-    color: white;
+    color: rgba(255,255,255,0.4);
     height: 100%;
     margin: 0;
     line-height: 1.5;
@@ -65,9 +65,13 @@ li {
 .skew-menu ul li a {
     display: block;
     padding: 1em 2em;
-    color: inherit;
+    color: rgba(255,255,255,0.4);
     text-decoration: none;
     /*transform: skew(25deg);*/
+}
+.skew-menu ul li a :hover {
+    color: #080808;
+    font-weight: 250;
 }
 a:link {
     font-style: bold;
@@ -97,10 +101,6 @@ a {
     font-weight: 250;
     text-decoration: none;
     background-color: transparent;
-}
-a:hover {
-    color: #ebd516;
-    font-weight: 250;
 }
 .modal-backdrop.in {
     opacity: 0.5;

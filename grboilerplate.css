@@ -19,9 +19,8 @@ p {
     font-weight: 200;
 }
 p:hover {
-    color: #6f42c1;
-    font-weight: 650;
-    background-blend-mode: var(--purple);
+    color: #343a40;
+    font-weight: 250;
 }
 html {
     height: 100%;

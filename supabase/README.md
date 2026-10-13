@@ -82,3 +82,15 @@ The app now reads `villaDues` and `VillaPmt` directly. Apply `004_dues_payments.
 After installation, verify an admin can load dues, record a special-fund due and payment, clear two dues with one sufficiently large payment, and rerun a monthly load without duplicates. A resident must not create, clear, or bulk-load dues.
 
 Local checks: `node --test tests/*.test.cjs` uses no additional dependencies. The PostgreSQL integration runner `tests/check-dues-postgres.cjs` needs `@electric-sql/pglite` in Node's module path; the optional browser runner `tests/check-finance-browser.cjs` needs Playwright, Chromium at `/usr/bin/chromium`, and the app served at port 8000. These test dependencies are not required to run the static app. Browser responses are simulated; PostgreSQL functions and RLS are executed locally against test tables, separately from live Supabase verification.
+
+## Split payments between billing months
+
+Apply `005_payment_splitting.sql` after `004_dues_payments.sql`, then deploy the updated frontend. This additive migration introduces `AllocationMonth` (billing month), `SplitFromPmtId` (original receipt ID), and `IsSplitParent` (retained original receipt). It does not change existing payment amounts or due links during installation.
+
+On Payments, choose **Split payment** for an unapplied original transaction. Enter at least two distinct billing months and manually assign an amount to each. Positive portions must total the original amount exactly, to the cent. Every portion receives a new generated payment ID. The same villa, receipt date, account, method, purpose, UTR, remarks, and late-payment flag are copied unchanged. Billing months are separate from the receipt date.
+
+The original record keeps its full receipt amount and is retained as an original split receipt for audit. It cannot be applied to dues and is excluded from transaction totals, available credit, charts, and export totals. The default Payments filter shows transactions; select **Original split receipt** under Record type to view retained originals. The Original payment ID column identifies the shared receipt. Date basis can switch between receipt date and billing month.
+
+Splitting is atomic and locks the same payment row as due matching. Any payment already linked to a due is blocked from splitting, preserving its existing relationships. Child transactions cannot be split again. Retrying a completed split returns its existing IDs and creates no duplicate amounts. Each child can fund multiple dues for its same villa and allocated month within its available balance.
+
+Validation: `node --test tests/*.test.cjs`; optionally run `tests/check-payment-split-postgres.cjs` with PGlite and `tests/check-payment-split-browser.cjs` with Playwright. The database runner checks preservation of receipt details, total conservation, safe retries, invalid totals/months, already-applied payments, monthly matching, archived originals, and member roles. Live Supabase installation and validation remain pending project-admin execution of the migration.

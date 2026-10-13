@@ -7,7 +7,12 @@ window.createVillaDirectory = (request, settings) => {
     }
   }
   const base=()=>'/rest/v1/'+encodeURIComponent(settings.table);
-  const literal=value=>'"'+String(value).replace(/\\/g,'\\\\').replace(/"/g,'\\"')+'"';
+  // PostgREST casts scalar filters to the column type. Quotes around 800 or true
+  // become part of that value and fail numeric/boolean casts.
+  // URLSearchParams handles transport escaping; scalar eq values need no
+  // SQL-style quoting (including text containing punctuation or quotes).
+  const literal=value=>String(value);
+  const filter=(column,value)=>value==null?'is.null':'eq.'+literal(value);
   function map(row) {
     if(row[columns.key]==null||row[columns.id]==null)throw Error('villaMaster returned a record without its key or villa number.');
     const villa={id:String(row[columns.id]),name:String(row[columns.name]??''),type:String(row[columns.type]??''),phone:String(row[columns.phone]??''),_masterKey:row[columns.key],_masterRow:row};
@@ -37,7 +42,7 @@ window.createVillaDirectory = (request, settings) => {
       const params=new URLSearchParams();params.set(columns.key,'eq.'+literal(original._masterKey));
       // Compare original directory fields so stale edits fail instead of overwriting a newer record.
       for(const column of [...new Set(Object.values(columns).filter(Boolean))]){
-        const old=original._masterRow[column];params.set(column,old==null?'is.null':'eq.'+literal(old));
+        const old=original._masterRow[column];params.set(column,filter(column,old));
       }
       delete body[columns.id];delete body[columns.key];
       path+='?'+params;method='PATCH';

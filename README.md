@@ -37,3 +37,5 @@ Dues and Payments summary cards reflect the filtered records. Available payment 
 Run `node --test tests/*.test.cjs` for adapter and filtering checks. The optional `tests/check-grid-browser.cjs` uses Playwright and the local app at port 8000 to check filters, natural sorting, payment matching after sorting, editable card identity, and responsive layouts.
 
 Payments can be apportioned manually between billing months into new payment IDs, preserving the original receipt details. Apply `supabase/005_payment_splitting.sql` before deploying that feature. Only unapplied original payments may be split; portions must total the receipt amount exactly. Retained originals are excluded from totals to avoid duplicate counting.
+
+Cleared dues can be reverted by admins/editors after installing `supabase/006_revert_due_payment.sql`. Reversal resets the due to Pending, removes its payment link, and restores available payment credit while preserving the receipt and other linked dues.

@@ -94,3 +94,15 @@ The original record keeps its full receipt amount and is retained as an original
 Splitting is atomic and locks the same payment row as due matching. Any payment already linked to a due is blocked from splitting, preserving its existing relationships. Child transactions cannot be split again. Retrying a completed split returns its existing IDs and creates no duplicate amounts. Each child can fund multiple dues for its same villa and allocated month within its available balance.
 
 Validation: `node --test tests/*.test.cjs`; optionally run `tests/check-payment-split-postgres.cjs` with PGlite and `tests/check-payment-split-browser.cjs` with Playwright. The database runner checks preservation of receipt details, total conservation, safe retries, invalid totals/months, already-applied payments, monthly matching, archived originals, and member roles. Live Supabase installation and validation remain pending project-admin execution of the migration.
+
+## Revert a cleared due
+
+Apply `006_revert_due_payment.sql` after `005_payment_splitting.sql`. Admins and editors see **Revert** on cleared due rows. The confirmation identifies the villa, due, amount and payment before **Revert allocation**.
+
+The database locks the expected payment first, then the due, matching the lock order of application and splitting. It checks the original due amount and payment link, clears `villaDues.PmtId`, and restores `dueStatus` to `Pending` in one transaction. A safe retry of an already Pending/unlinked due releases no additional amount. A changed amount, status or linked payment is rejected.
+
+`VillaPmt` stores receipts, not a mutable applied-balance column: the original apply operation only set the due link. Its complete inverse therefore removes that link and recalculates the payment's available balance from the remaining linked dues. Receipt amount, UTR, date, split information and generated payment IDs remain intact. Other cleared dues using the same payment are unaffected. Reverting a split transaction's due restores that child's credit within its assigned month; it does not merge or delete the split transactions.
+
+Both financial record sets are reloaded after reversal, updating the Dues and Payments grids and summary amounts. If a read fails after the database reversal commits, the UI reports that the reversal completed and asks for Refresh rather than suggesting another reversal.
+
+Checks: `node --test tests/*.test.cjs`, plus the optional PGlite runner `tests/check-due-reversal-postgres.cjs` and Playwright runner `tests/check-due-reversal-browser.cjs`. The database test verifies preserved receipts and other allocations, restored normal/split credit, safe retries, stale-data rejection, reapplication, and resident denial. Live Supabase verification remains pending installation of the migration.

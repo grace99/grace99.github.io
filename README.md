@@ -35,3 +35,5 @@ Click a table header to sort; click it again to reverse direction. Card lists us
 Dues and Payments summary cards reflect the filtered records. Available payment balances still account for all linked dues, including dues outside the visible date range. Monthly-preview filters only change displayed rows; the load still bills all eligible villas for the selected month. Column captions and forms use readable labels while preserving the original database field mappings.
 
 Run `node --test tests/*.test.cjs` for adapter and filtering checks. The optional `tests/check-grid-browser.cjs` uses Playwright and the local app at port 8000 to check filters, natural sorting, payment matching after sorting, editable card identity, and responsive layouts.
+
+Payments can be apportioned manually between billing months into new payment IDs, preserving the original receipt details. Apply `supabase/005_payment_splitting.sql` before deploying that feature. Only unapplied original payments may be split; portions must total the receipt amount exactly. Retained originals are excluded from totals to avoid duplicate counting.

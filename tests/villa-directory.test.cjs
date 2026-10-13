@@ -24,3 +24,11 @@ test('nullable values use is.null and punctuation in scalar text is preserved',a
  const original=(await directory.list())[0];await directory.save(original,original);const params=new URL('https://example.test'+captured).searchParams;
  assert.equal(params.get('contact'),'is.null');assert.equal(params.get('resident'),'eq.'+originalRow.resident);
 });
+test('blocked update to an unchanged readable record identifies update policy access',async()=>{
+ const directory=setup(async(url,options)=>options?[]:[row]);const original=(await directory.list())[0];
+ await assert.rejects(directory.save({...original,name:'New name'},original),/UPDATE policies and grants/);
+});
+test('stale update reports a changed record rather than a policy issue',async()=>{
+ let reads=0;const directory=setup(async(url,options)=>options?[]:(reads++===0?[row]:[]));const original=(await directory.list())[0];
+ await assert.rejects(directory.save({...original,name:'New name'},original),/record changed or is no longer accessible/);
+});

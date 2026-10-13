@@ -2,8 +2,9 @@
 window.FernsCloud = (() => {
   const config = window.FERNSVILLA_SUPABASE;
   const key = config.publishableKey || localStorage.getItem('fernsvilla-public-key') || '';
-  let session = null, role = null, revision = null, refreshing = null, ledgerVillas = [];
+  let session = null, role = null, revision = null, refreshing = null, ledgerVillas = [], legacyPayments = [];
   const directory = window.createVillaDirectory(request, config.villaMaster);
+  const finance=window.createAssociationLedger(request,()=>!!session&&['admin','editor'].includes(role));
   const sessionKey = 'fernsvilla-supabase-session';
   try { session = JSON.parse(localStorage.getItem(sessionKey)); } catch {}
   function storeSession(value) { session = value; if (value) localStorage.setItem(sessionKey, JSON.stringify(value)); else localStorage.removeItem(sessionKey); }
@@ -22,7 +23,7 @@ window.FernsCloud = (() => {
       const response = await fetch(config.url + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal: controller.signal });
       const text = await response.text(); let data; try { data = JSON.parse(text); } catch { data = null; }
       if (!response.ok) {
-        if (response.status === 401 && auth) storeSession(null);
+        if (response.status === 401 && auth && data?.code !== '42501') storeSession(null);
         throw Error(data?.msg || data?.message || data?.error_description || (response.status===403?'Association access denied. Contact your administrator.':`Supabase request failed (${response.status}).`));
       }
       return data;
@@ -43,8 +44,10 @@ window.FernsCloud = (() => {
     if (!validate(rows[0].data)) throw Error('Association data has an invalid format. Contact the administrator.');
     revision = rows[0].revision;
     const masterVillas = await directory.list();
+    const financial=await finance.list();
     ledgerVillas = rows[0].data.villas;
-    return {...rows[0].data, villas: masterVillas.map(villa => {
+    legacyPayments = rows[0].data.payments;
+    return {...rows[0].data,...financial, villas: masterVillas.map(villa => {
       const balance = ledgerVillas.find(item => item.id === villa.id);
       return {...villa, due: villa.due ?? balance?.due ?? 0, paid: Number(balance?.paid ?? 0)};
     })};
@@ -53,13 +56,15 @@ window.FernsCloud = (() => {
     if (!session || !['admin','editor'].includes(role)) throw Error('Administrator or editor access is required to change association records.');
     const balances = new Map(ledgerVillas.map(villa => [villa.id, {id:villa.id,due:villa.due,paid:villa.paid}]));
     for (const villa of data.villas) balances.set(villa.id,{id:villa.id,due:villa.due,paid:villa.paid});
-    const stored = {...data,villas:[...balances.values()]};
+    const {dues,payments,...other}=data;
+    const stored = {...other,payments:legacyPayments,villas:[...balances.values()]};
     const result = await request('/rest/v1/rpc/fernsvilla_save',{method:'POST',body:{expected_revision:revision,new_data:stored}});
     ledgerVillas = stored.villas;
     revision = result;
   }
   return {
     configured: publicKey(key), hasSession:()=>!!session, user:()=>session?.user,
+    finance,
     saveVilla:async(villa,original)=>{if(!session||!['admin','editor'].includes(role))throw Error('Administrator or editor access is required to change villa records.');return directory.save(villa,original);},
     role:()=>role, canEdit:()=>!!session && ['admin','editor'].includes(role), load, save,
     setPublicKey(value) { if (!publicKey(value.trim())) throw Error('Use a public publishable or anon key, never a secret or service-role key.');localStorage.setItem('fernsvilla-public-key',value.trim()); },

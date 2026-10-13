@@ -1,0 +1,15 @@
+/* Financial records use the existing relational tables, not fernsvilla_state. */
+window.createAssociationLedger=(request,canEdit)=>{
+ const dueCols=['villa','dueTyp','dueDesc','dueAmt','dueDate','dueStatus','PmtId'];
+ const paymentCols=['id','Villa','PmtDate','AccountNum','PmtMthd','PmtDueToward','PmtAmt','PmtRemarks','UTR','LatePmt'];
+ async function listTable(table,columns,order){const result=[];for(let offset=0;;offset+=500){const params=new URLSearchParams({select:columns.join(','),order,limit:'500',offset:String(offset)});const rows=await request('/rest/v1/'+table+'?'+params);if(!Array.isArray(rows))throw Error('Could not load '+table);result.push(...rows);if(rows.length<500)return result;}}
+ const check=()=>{if(!canEdit())throw Error('Administrator or editor access is required.');};
+ const amount=value=>{const cents=window.FernsLedger.cents(value);if(cents<=0)throw Error('Amount must be greater than zero.');return cents/100;};
+ return {
+  async list(){const [dues,payments]=await Promise.all([listTable('villaDues',dueCols,'dueDate.desc.nullslast,villa.asc,dueTyp.asc'),listTable('VillaPmt',paymentCols,'id.desc')]);return {dues,payments};},
+  async addDue(data){check();if(!data.dueTyp?.trim())throw Error('Enter a fund name / due type.');if(data.dueTyp.trim()==='Monthly maintenance')throw Error('Use Load monthly dues for monthly maintenance assessments.');const body={villa:data.villa,dueTyp:data.dueTyp.trim(),dueDesc:data.dueDesc||null,dueAmt:amount(data.dueAmt),dueDate:data.dueDate,dueStatus:'Pending',PmtId:null};const rows=await request('/rest/v1/villaDues',{method:'POST',body,prefer:'return=representation'});if(rows?.length!==1)throw Error('Due was not saved. Check villaDues INSERT access.');return rows[0];},
+  async addPayment(data){check();const body={};for(const column of paymentCols.filter(c=>c!=='id'))body[column]=data[column]===''||data[column]==null?null:data[column];body.PmtAmt=amount(data.PmtAmt);body.LatePmt=data.LatePmt===''||data.LatePmt==null?null:data.LatePmt===true||data.LatePmt==='true';const rows=await request('/rest/v1/VillaPmt',{method:'POST',body,prefer:'return=representation'});if(rows?.length!==1)throw Error('Payment was not saved. Check VillaPmt INSERT access.');return rows[0];},
+  async bulkMonthly(dueDate){check();return request('/rest/v1/rpc/fernsvilla_load_monthly_dues',{method:'POST',body:{billing_date:dueDate}});},
+  async applyPayment(due,paymentId){check();if(!due.villa||!due.dueTyp||!due.dueDate)throw Error('The due needs villa, dueTyp and dueDate before it can be matched.');return request('/rest/v1/rpc/fernsvilla_apply_payment',{method:'POST',body:{due_villa:due.villa,due_type:due.dueTyp,due_date:due.dueDate,payment_id:paymentId}});}
+ };
+};

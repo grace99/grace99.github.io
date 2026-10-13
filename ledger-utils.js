@@ -20,8 +20,9 @@ window.FernsLedger = {
     const duplicateVillas=new Set(existing.filter(due=>String(due[periodField]??'').slice(0,7)===period).map(due=>String(due[villaField])));
     const seen=new Set();return villas.map(villa=>{
       if(seen.has(villa.id))throw Error('Duplicate villa number in master data.');seen.add(villa.id);
-      const amount=this.cents(villa.due??0);
-      return {villa:villa.id,name:villa.name,amount:amount/100,skip:duplicateVillas.has(villa.id)||amount===0,reason:duplicateVillas.has(villa.id)?'Already billed':amount===0?'No maintenance amount':''};
+      const building=String(villa.resStatus??'').trim().toLowerCase()==='under construction';
+      const amount=building?0:this.cents(villa.due??0);
+      return {villa:villa.id,name:villa.name,amount:amount/100,skip:duplicateVillas.has(villa.id)||(!building&&amount===0),reason:duplicateVillas.has(villa.id)?'Already billed':building?'Under construction · no maintenance charge':amount===0?'No maintenance amount':''};
     });
   },
   availablePayment(payment,dues,{paymentKey,duePayment,dueAmount,dueStatus,paymentAmount}) {

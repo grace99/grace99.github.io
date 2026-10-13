@@ -48,7 +48,12 @@ window.createVillaDirectory = (request, settings) => {
       path+='?'+params;method='PATCH';
     }
     const rows=await request(path,{method,body,prefer:'return=representation'});
-    if(!Array.isArray(rows)||rows.length!==1)throw Error('The villa was not saved. It may have changed or your account may lack access. Refresh the directory and retry.');
+    if(Array.isArray(rows)&&rows.length===0&&original){
+      const unchanged=await request(path);
+      if(Array.isArray(unchanged)&&unchanged.length===1)throw Error('The villa was not saved. The record is unchanged but the update was blocked. Ask your administrator to check villaMaster UPDATE policies and grants.');
+      throw Error('The villa was not saved. The record changed or is no longer accessible. Refresh the directory and retry.');
+    }
+    if(!Array.isArray(rows)||rows.length!==1)throw Error('The villa was not saved. Check villaMaster INSERT permissions and any database triggers.');
     return map(rows[0]);
   }
   return {list,save,hasAssessment:()=>!!columns?.due};

@@ -18,6 +18,7 @@ window.createVillaDirectory = (request, settings) => {
     const villa={id:String(row[columns.id]),name:String(row[columns.name]??''),type:String(row[columns.type]??''),phone:String(row[columns.phone]??''),_masterKey:row[columns.key],_masterRow:row};
     if(columns.due){villa.due=Number(row[columns.due]??0);if(!Number.isFinite(villa.due)||villa.due<0)throw Error('villaMaster contains an invalid monthly assessment.');}
     for(const key of ['area','street','resStatus','numRes','numKids','numVehicles','numPets','ownCCTV','ownPwrLine','oStatus','secPhone','priEmail','secEmail'])if(columns[key])villa[key]=row[columns[key]];
+    if(String(villa.resStatus??'').trim().toLowerCase()==='under construction')villa.due=0;
     return villa;
   }
     const extras=['area','street','resStatus','numRes','numKids','numVehicles','numPets','ownCCTV','ownPwrLine','oStatus','secPhone','priEmail','secEmail'];
@@ -36,6 +37,7 @@ window.createVillaDirectory = (request, settings) => {
   async function save(villa,original){
     checkConfig();const body={};
     for(const key of ['id','name','type','phone','due',...extras])if(columns[key])body[columns[key]]=villa[key]===''||villa[key]==null?null:villa[key];
+    if(columns.due&&String(villa.resStatus??'').trim().toLowerCase()==='under construction')body[columns.due]=0;
     let path=base(),method='POST';
     if(original){
       if(villa.id!==original.id)throw Error('Villa number cannot change because dues and payments reference it.');

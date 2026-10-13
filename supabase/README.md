@@ -106,3 +106,9 @@ The database locks the expected payment first, then the due, matching the lock o
 Both financial record sets are reloaded after reversal, updating the Dues and Payments grids and summary amounts. If a read fails after the database reversal commits, the UI reports that the reversal completed and asks for Refresh rather than suggesting another reversal.
 
 Checks: `node --test tests/*.test.cjs`, plus the optional PGlite runner `tests/check-due-reversal-postgres.cjs` and Playwright runner `tests/check-due-reversal-browser.cjs`. The database test verifies preserved receipts and other allocations, restored normal/split credit, safe retries, stale-data rejection, reapplication, and resident denial. Live Supabase verification remains pending installation of the migration.
+
+### Under construction
+
+Run `007_under_construction_dues.sql` after `006_revert_due_payment.sql`. The villa form uses **Residence status**, including **Under construction**, which sets maintenance to ₹0. A database trigger enforces that amount on master inserts and maintenance/status updates. Monthly loading includes those villas with `dueAmt = 0`, even if an older master record still has a positive amount; repeated loads remain protected against duplicates. The preview shows the exemption and the dues grid shows **No payment required**. Existing dues and payment allocations are preserved. Changing back to another residence status enables entry of the applicable maintenance amount. Special fund entries retain their separately entered amounts.
+
+Validation: `node --test tests/*.test.cjs` and `tests/check-construction-postgres.cjs` with PGlite. Project-admin execution of the migration is required for live Supabase enforcement.

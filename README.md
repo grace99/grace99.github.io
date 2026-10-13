@@ -25,3 +25,13 @@ The app has Supabase email/password authentication, member access controls, and 
 Chromium smoke checks covered all nine pages, villa creation, payment recording and credit calculation, local persistence after reload, community post publication, issue status transitions, and desktop/mobile layouts. JavaScript syntax was checked with `node --check app.js`.
 
 Supabase UI integration checks use simulated API responses; live `villaMaster` column reads passed; authenticated live writes and policy verification remain pending.
+
+## Grid filters and sorting
+
+Record grids use labeled filter panels with Search and Reset. Dues and Payments offer calendar-year filters, inclusive From/To dates, and multi-select month buttons; these filters combine. With All years selected, month buttons match that month across all years. Directory and card grids offer applicable category, role, villa, area, street, or status filters without invented dates.
+
+Click a table header to sort; click it again to reverse direction. Card lists use a Sort by selector and direction button. Villa values use natural numeric ordering, including permanent multi-plot identifiers: `2`, `10`, `25-26-27`, `100`. Amounts and payment IDs use numeric ordering, and date fields use chronological ordering. Dues keep their linked payment details together while sorting. Grid state is separate for each view and remains in memory during navigation.
+
+Dues and Payments summary cards reflect the filtered records. Available payment balances still account for all linked dues, including dues outside the visible date range. Monthly-preview filters only change displayed rows; the load still bills all eligible villas for the selected month. Column captions and forms use readable labels while preserving the original database field mappings.
+
+Run `node --test tests/*.test.cjs` for adapter and filtering checks. The optional `tests/check-grid-browser.cjs` uses Playwright and the local app at port 8000 to check filters, natural sorting, payment matching after sorting, editable card identity, and responsive layouts.

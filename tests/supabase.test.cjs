@@ -7,13 +7,14 @@ const empty={villas:[],issues:[],team:[],resources:[],posts:[],payments:[]};
 function setup(handler,stored={}){
  const storage=new Map(Object.entries(stored));const calls=[];
  const ctx={window:{FERNSVILLA_SUPABASE:{url:'https://example.supabase.co',publishableKey:'sb_publishable_test',villaMaster:{table:'villaMaster',columns:{key:'Villa',id:'Villa',name:'Name',type:'OwnORrent',phone:'PriPhoneNo',due:'MaintAmount'}}}},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},AbortController,setTimeout,clearTimeout,atob,URLSearchParams,fetch:async(url,options)=>{calls.push({url,...options});const result=await handler(url,options);return {ok:(result.status||200)<400,status:result.status||200,text:async()=>JSON.stringify(result.data)};}};
- vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../villa-directory.js'),'utf8'),ctx);vm.runInNewContext(source,ctx);return {cloud:ctx.window.FernsCloud,calls,storage};
+ vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../villa-directory.js'),'utf8'),ctx);vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../ledger-utils.js'),'utf8'),ctx);vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../dues-ledger.js'),'utf8'),ctx);vm.runInNewContext(source,ctx);return {cloud:ctx.window.FernsCloud,calls,storage};
 }
 const login={access_token:'access-test',refresh_token:'refresh-test',expires_in:3600,user:{id:'user-uuid',email:'member@example.test'}};
 function handler(role='admin',saveResult=8){return (url,options)=>{
  if(url.includes('/auth/v1/token'))return {data:login};
  if(url.includes('fernsvilla_members'))return {data:role?[{role}]:[]};
  if(url.includes('fernsvilla_state'))return {data:[{data:empty,revision:7}]};
+ if(url.includes('/villaDues')||url.includes('/VillaPmt'))return {data:[]};
  if(url.includes('/villaMaster'))return {data:[]};
  if(url.includes('fernsvilla_save'))return {data:saveResult};
  if(url.includes('/auth/v1/logout'))return {data:{}};
@@ -44,6 +45,7 @@ test('secret and service-role keys are rejected',()=>{
 test('villaMaster is authoritative and saves only balances into association document',async()=>{
  const normal=handler();const {cloud,calls}=setup((url,options)=>{
  if(url.includes('fernsvilla_state'))return {data:[{revision:7,data:{...empty,villas:[{id:'FV-001',name:'Stale JSON name',due:100,paid:900}]}}]};
+ if(url.includes('/villaDues')||url.includes('/VillaPmt'))return {data:[]};
  if(url.includes('/villaMaster'))return {data:[{Villa:'FV-001',Name:'Actual master name',OwnORrent:'Owner',PriPhoneNo:'12345',MaintAmount:'4500.00'}]};
  return normal(url,options);
  });
@@ -53,4 +55,15 @@ test('villaMaster is authoritative and saves only balances into association docu
 test('directory creation bypasses association JSON save and sends exact table columns',async()=>{
  const normal=handler();const {cloud,calls}=setup((url,options)=>url.includes('/villaMaster')&&options.method==='POST'?{data:[{Villa:'FV-009',Name:'New owner',OwnORrent:'Owner',PriPhoneNo:null,MaintAmount:5000}]}:normal(url,options));
  await cloud.signIn('member@example.test','password');const before=calls.length;await cloud.saveVilla({id:'FV-009',name:'New owner',type:'Owner',phone:'',due:5000});assert.equal(calls.length,before+1);const save=calls.at(-1);assert.match(save.url,/\/villaMaster$/);assert.equal(save.headers.Prefer,'return=representation');assert.deepEqual(JSON.parse(save.body),{Villa:'FV-009',Name:'New owner',OwnORrent:'Owner',PriPhoneNo:null,MaintAmount:5000});
+});
+test('relational financial records never overwrite legacy JSON payment history',async()=>{
+ const normal=handler(),legacy=[{villa:'FV-001',amount:800,reference:'Old reference'}];let saved;
+ const {cloud}=setup((url,options)=>{
+ if(url.includes('fernsvilla_state'))return {data:[{revision:7,data:{...empty,payments:legacy}}]};
+ if(url.includes('fernsvilla_save')){saved=JSON.parse(options.body).new_data;return {data:8};}
+ return normal(url,options);
+ });const data=await cloud.signIn('member@example.test','password');data.payments=[{id:1,Villa:'FV-001',PmtAmt:2400}];data.dues=[{villa:'FV-001',dueAmt:800}];await cloud.save(data);assert.deepEqual(saved.payments,legacy);assert.equal('dues' in saved,false);
+});
+test('table permission errors do not discard a valid signed-in session',async()=>{
+ const normal=handler();const {cloud}=setup((url,options)=>url.includes('/villaDues')?{status:401,data:{code:'42501',message:'permission denied'}}:normal(url,options));await assert.rejects(cloud.signIn('member@example.test','password'),/permission denied/);assert.equal(cloud.hasSession(),true);
 });

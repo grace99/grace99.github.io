@@ -39,3 +39,9 @@ Run `node --test tests/*.test.cjs` for adapter and filtering checks. The optiona
 Payments can be apportioned manually between billing months into new payment IDs, preserving the original receipt details. Apply `supabase/005_payment_splitting.sql` before deploying that feature. Only unapplied original payments may be split; portions must total the receipt amount exactly. Retained originals are excluded from totals to avoid duplicate counting.
 
 Cleared dues can be reverted by admins/editors after installing `supabase/006_revert_due_payment.sql`. Reversal resets the due to Pending, removes its payment link, and restores available payment credit while preserving the receipt and other linked dues.
+
+## Appearance
+
+The sun/moon button in the top-right header switches between light and dark themes across pages, grids, forms, account controls and dialogs. On a new browser the theme follows the device preference, including changes while the app is open. Choosing a theme saves it in `ferns-theme` local storage and retains it across navigation and reloads. It requires no Supabase migration.
+
+The optional Playwright check `tests/check-theme-browser.cjs` validates device preferences, saved overrides, all pages, finance dialogs and mobile layout. Set `FERNS_TEST_URL` to the local server URL (defaults to port 8013 for this check).

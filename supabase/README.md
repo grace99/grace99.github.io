@@ -142,3 +142,23 @@ An installation snapshot records any existing rows; reinstallation preserves his
 Only association admins can read history through authenticated browser access. Anonymous, resident and editor access is denied; app users cannot directly insert, edit or delete history. Project database owners still have administrative control. No History page is added by this migration; view the history tables in Supabase.
 
 The supported `operations/purge_financial_records.sql` uses DELETE and now preserves each deleted row in history. TRUNCATE on live finance tables is rejected because it bypasses row auditing. Do not purge history when resetting live financial data. Validation: `tests/check-financial-history-postgres.cjs` with PGlite covers current schemas, snapshots, reinstall, matching/splits/reversal, deletion, user attribution, role access, rollback, additional columns and truncate protection.
+
+### Splitting payments across villas
+
+Apply `011_split_payments_across_villas.sql` after 010, then deploy the frontend. Each split allocation has a destination villa, billing month and positive amount. Multiple villas may receive portions for the same month; one villa may receive portions for different months. Use at most one portion for each villa/month pair. Combined identifiers such as `25-26-27` remain a single permanent villa account.
+
+The selected amounts must exactly equal the original receipt. Each portion receives a new payment ID, selected Villa, AllocationMonth and amount, while retaining receipt date, account, method, purpose, remarks, UTR and late-payment flag. All destinations must exist in villaMaster. The original receipt retains its Villa and amount and is excluded from balances as a split parent. Existing rows are not reassigned. Matching checks the child's own villa and month; reverting releases credit to that child. History records the original's split flag and each new child, including destination Villa.
+
+Existing same-villa monthly splitting remains supported; old callers that omit the allocation villa default to the original Villa. Applied receipts and split children cannot be split again. Retry returns existing child IDs. The live payment uniqueness constraint can reject an allocation matching an existing villa/amount/receipt-date/month combination; the entire split rolls back and the dialog reports the conflict.
+
+Checks: `node --test tests/*.test.cjs`; optional `tests/check-cross-villa-split-postgres.cjs` (PGlite) and `tests/check-cross-villa-split-browser.cjs` (Playwright, `FERNS_TEST_URL`). They cover same-month different villas, exact conservation, receipt preservation, invalid villas, duplicates, collisions/rollback, retries, history, matching restrictions, reversal and mobile layout.
+
+### Map or correct an unapplied payment's villa
+
+Apply `012_map_unassigned_payments.sql` after 011. Record payment now allows **Unassigned — map later** (Villa NULL); imported receipts can also leave Villa NULL. The grid labels these as Unassigned and offers that Villa filter. Unassigned payments have Map villa and Split payment actions; applying a payment requires a confirmed villa.
+
+**Map villa** explicitly assigns or corrects the villa of an unapplied transaction while retaining its ID, amount, dates and receipt details. Admin/editor access is required. The RPC locks the row and checks the expected old Villa, destination master record, existing due links and archive flag. Applied transactions and archived split receipts are rejected; unapplied split children may be corrected while retaining their billing month and original receipt link. A payment uniqueness conflict rolls back the mapping. History records old/new Villa and actor. Same-target retries are harmless.
+
+The payment-villa guard remains enabled. Mapping uses a temporary exception restricted to the selected payment ID and restores it afterwards; collateral changes to other payments are rejected. Manual database villa changes still require the explicit administrator correction transaction described above. Splitting an unassigned original is allowed if every portion explicitly selects a valid destination; the archived original retains NULL Villa.
+
+Checks: `tests/check-payment-villa-mapping-postgres.cjs` and `tests/check-payment-villa-mapping-browser.cjs`, plus the unit suite. They verify unassigned recording, explicit correction, stable identity/receipt data, history, stale or applied rejection, uniqueness conflicts, no collateral guard bypass, split support, filtering, mobile layout and role access.

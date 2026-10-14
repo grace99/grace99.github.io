@@ -1,0 +1,20 @@
+module.exports=async(db)=>{
+ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+ await db.exec(`SET ROLE authenticated;SET test.uid='11111111-1111-1111-1111-111111111111';
+ INSERT INTO public."villaDues"(villa,"dueTyp","dueAmt","dueDate") VALUES ('50','Status upgrade',1200,'2027-01-01');`);
+ const receipt=async(amount,date)=>(await db.query(`INSERT INTO public."VillaPmt"("Villa","PmtDate","PmtAmt") VALUES ('50',$1,$2) RETURNING id`,[date,amount])).rows[0].id;
+ const first=await receipt(800,'2027-01-02'),second=await receipt(400,'2027-01-03');
+ const apply=async(id,amount)=>(await db.query(`SELECT public.fernsvilla_allocate_payment('50','Status upgrade','2027-01-01',$1,$2) AS result`,[id,amount])).rows[0].result;
+ let due=await apply(first,800);assert.equal(due.dueStatus,'Unpaid');
+ const balanceBefore=(await db.query(`SELECT "outstandingBalance" FROM public."villaBalances" WHERE "Villa"='50'`)).rows[0].outstandingBalance;
+ await db.exec('RESET ROLE;');const sql=fs.readFileSync(path.join(__dirname,'../supabase/015_partially_paid_due_status.sql'),'utf8');await db.exec(sql);
+ due=(await db.query(`SELECT * FROM public."villaDues" WHERE "dueTyp"='Status upgrade'`)).rows[0];assert.equal(due.dueStatus,'Partially paid');assert.equal(due.paidAmt,'800');assert.equal(due.outstandingAmt,'400');assert.equal(due.PmtId,first);
+ assert.equal((await db.query(`SELECT "outstandingBalance" FROM public."villaBalances" WHERE "Villa"='50'`)).rows[0].outstandingBalance,balanceBefore);
+ const count=async()=>Number((await db.query('SELECT count(*) AS n FROM public.fernsvilla_audit_events')).rows[0].n);const beforeRetry=await count();await db.exec(sql);assert.equal(await count(),beforeRetry);
+ await db.exec(`SET ROLE authenticated;`);due=await apply(second,400);assert.equal(due.dueStatus,'Cleared');assert.equal(due.outstandingAmt,0);
+ const reverted=(await db.query(`SELECT public.fernsvilla_revert_due_payment('50','Status upgrade','2027-01-01',$1,1200,1200) AS result`,[due.PmtId])).rows[0].result;assert.equal(reverted.due.dueStatus,'Unpaid');
+ const matched=(await db.query(`SELECT public.fernsvilla_apply_payment_to_dues($1,'[{"villa":"50","dueTyp":"Status upgrade","dueDate":"2027-01-01","amount":500}]') AS result`,[first])).rows[0].result;assert.equal(matched.dues[0].dueStatus,'Partially paid');assert.equal(matched.payment.PaymentStatus,'Matched');
+ await db.query(`SELECT public.fernsvilla_load_monthly_dues('2027-02-01')`);
+ const monthly=(await db.query(`SELECT "dueStatus" FROM public."villaDues" WHERE "dueDate"='2027-02-01' AND "dueTyp"='Monthly maintenance'`)).rows;assert.ok(monthly.some(d=>d.dueStatus==='NIL'));assert.ok(monthly.some(d=>d.dueStatus==='Unpaid'));assert.ok(monthly.every(d=>['Unpaid','NIL'].includes(d.dueStatus)));
+ console.log('PASS partial status: existing-record upgrade, preserved balances/links, retry without duplicate audit, top-up Cleared, revert Unpaid, batch matching Partially paid, monthly Unpaid/NIL');
+};

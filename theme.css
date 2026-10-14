@@ -109,3 +109,6 @@
 :root[data-theme=light] .avatar{border-color:var(--line)}
 :root[data-theme=light] .dot{box-shadow:0 0 0 2px #e5eadf}
 :root[data-theme=light] :is(.table-wrap,.modal){scrollbar-color:#a3b8a2 transparent}
+
+:root[data-theme=light] .badge.partial{background:#dce5ea;color:#345369;border-color:#b5c7cf}
+:root[data-theme=dark] .badge.partial{background:#253e5b;color:#b3d2f8;border-color:#3c5c80}

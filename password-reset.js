@@ -15,5 +15,6 @@ window.FernsPasswords=(()=>{
   if(params.has('access_token')){cloudBusy=true;shell('Set new password','<p class="password-notice" role="status">Checking your recovery link…</p>');cloud.acceptRecovery(params).then(()=>{cloudBusy=false;newPassword();render();}).catch(error=>{cloudBusy=false;cloud.clearRecovery();newPassword(error.message);});}else newPassword();return true;
  }
  document.addEventListener('click',event=>{if(event.target.closest('[data-forgot-password]'))forgot();if(event.target.closest('[data-set-password]')&&!cloudBusy)newPassword();if(event.target.closest('[data-password-signin]')&&!cloudBusy){history.replaceState(null,'',location.pathname);cloudAction('signin');}});
+ window.addEventListener('hashchange',()=>{if(location.hash)start();});
  return {start};
 })();

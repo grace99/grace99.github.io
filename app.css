@@ -49,3 +49,4 @@ table{font-size:14px;min-width:780px}th{font-size:12px;letter-spacing:.3px}td{li
 /* Keep financial dialogs within the viewport, including wide allocation forms. */
 .modal-backdrop{grid-template-columns:minmax(0,1fr)}.modal{min-width:0}.split-receipt{overflow-wrap:anywhere}
 .stat-drill{text-align:left;width:100%;cursor:pointer}.stat-drill:focus-visible{outline:3px solid #34b6a1;outline-offset:3px}.stat-modal{width:1200px}.stat-modal .grid-filters{margin-top:16px}.stat-modal .table-wrap{border:1px solid var(--line);border-radius:10px}
+.dues-views{margin-bottom:22px}.payment-detail-grid+.payment-detail-grid{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}[data-match-amount]{min-width:100px}.dues-table{min-width:1300px}

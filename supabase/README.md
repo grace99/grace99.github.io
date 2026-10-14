@@ -162,3 +162,23 @@ Apply `012_map_unassigned_payments.sql` after 011. Record payment now allows **U
 The payment-villa guard remains enabled. Mapping uses a temporary exception restricted to the selected payment ID and restores it afterwards; collateral changes to other payments are rejected. Manual database villa changes still require the explicit administrator correction transaction described above. Splitting an unassigned original is allowed if every portion explicitly selects a valid destination; the archived original retains NULL Villa.
 
 Checks: `tests/check-payment-villa-mapping-postgres.cjs` and `tests/check-payment-villa-mapping-browser.cjs`, plus the unit suite. They verify unassigned recording, explicit correction, stable identity/receipt data, history, stale or applied rejection, uniqueness conflicts, no collateral guard bypass, split support, filtering, mobile layout and role access.
+
+### Partial payments and financial villa balances
+
+Apply `013_partial_payment_allocations.sql` after 012, then deploy this frontend before using partial matching. There are now three financial structures:
+
+- `villaBalances`: one row per permanent villa account, keyed by `Villa` and referencing `villaMaster.Villa`. Its `outstandingBalance` is maintained automatically from **all** outstanding dues for that villa. New master records automatically receive a financial account. App users cannot edit this balance directly.
+- `villaDues`: the existing `villa` column is now a foreign key to `villaBalances.Villa`. The migration adds `paidAmt` (maintained from allocations) and generated `outstandingAmt = max(dueAmt - paidAmt, 0)`. Original `dueAmt` remains unchanged. No balance fields are added to master data.
+- `villaPaymentAllocations`: records the amount from each payment applied to a due, using the existing composite due identity and a payment foreign key. One due can receive several payments and one payment can cover several dues. `villaDues.PmtId` remains a reference payment ID; allocations are authoritative for the complete payment list and amounts.
+
+An ₹800 payment against a ₹1,200 due leaves paidAmt ₹800 and outstandingAmt ₹400. The due remains **Unpaid** until fully covered, then **Cleared**; zero dues remain **NIL**. The next assessment adds its own due amount, while the old ₹400 remains on the original due and contributes to the villa's all-time balance. Debts are not duplicated into new dues. Unallocated payment credit is tracked separately until applied.
+
+Both matching entry points allow explicit positive partial amounts within available payment credit and outstanding due. Batch allocation commits all selected portions together or rolls back. Expected paid amounts reject stale repeated requests. Existing same-villa and split billing-month checks remain enforced. Revert now reverses **all allocations for the selected due**, including partial payments, restoring credit to each receipt while preserving other dues. Applied payments cannot be mapped or split even if they are not the due's reference payment.
+
+Use **Dues → Villa balances** for older outstanding, latest loaded month's outstanding, and the all-time total per villa. Click the total to inspect the underlying unpaid dues. Date-filtered Overview cards retain their reporting-month rule; the balance view always includes older debt. Villa directory remains master data only.
+
+Existing valid full matches are backfilled as allocations without changing receipt amounts or villa assignments. Installation aborts on inconsistent links or overallocated receipts. History captures allocation creation/changes/deletion in `villaPaymentAllocationHistory`, alongside existing due/payment history. The provided DELETE purge removes live allocations through the due foreign key, resets financial balances to zero and retains history.
+
+For imports, continue using the payment schema previously supplied. Do not supply computed `paidAmt`/`outstandingAmt` or manually load PmtId matches into new dues; use the matching workflow. Only admin/editor RPCs can write allocations. All members can read permitted financial records; allocation history is admin-only.
+
+Validation: `node --test tests/*.test.cjs`, `tests/check-partial-payments-postgres.cjs` (PGlite), and `tests/check-partial-payments-browser.cjs` (Playwright, `FERNS_TEST_URL`). They cover partial/top-up/full status transitions, multi-receipt reversal, credit conservation, batch rollback, history, foreign keys, new account creation, balance totals, role access, purge, both UI entry points and monthly carry-forward.

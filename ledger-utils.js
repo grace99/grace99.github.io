@@ -26,8 +26,8 @@ window.FernsLedger = {
       return {villa:villa.id,name:villa.name,amount:amount/100,skip:duplicateVillas.has(villa.id)||(!building&&amount===0),reason:duplicateVillas.has(villa.id)?'Already billed':building?'Under construction · no maintenance charge':amount===0?'No maintenance amount':''};
     });
   },
-  availablePayment(payment,dues,{paymentKey,duePayment,dueAmount,dueStatus,paymentAmount}) {
-    const used=dues.filter(due=>due[duePayment]!=null&&String(due[duePayment])===String(payment[paymentKey])).reduce((sum,due)=>sum+this.cents(due[dueAmount]??0),0);
-    return this.cents(payment[paymentAmount]??0)-used;
+  availablePayment(payment,dues,{paymentKey,duePayment,dueAmount,dueStatus,paymentAmount,allocations=[]}) {
+    const used=dues.filter(due=>due.paidAmt==null&&due[duePayment]!=null&&String(due[duePayment])===String(payment[paymentKey])).reduce((sum,due)=>sum+this.cents(due[dueAmount]??0),0);
+    return this.cents(payment[paymentAmount]??0)-used-allocations.filter(a=>String(a.payment_id)===String(payment[paymentKey])).reduce((sum,a)=>sum+this.cents(a.amount),0);
   }
 };

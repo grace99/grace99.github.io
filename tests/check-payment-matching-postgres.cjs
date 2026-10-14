@@ -19,6 +19,7 @@ INSERT INTO public."VillaPmt"(id,"Villa","PmtDate","PmtAmt") VALUES (90,'50','20
 INSERT INTO public."villaDues" VALUES ('50','Legacy fund','Paid',50,'2026-09-01','Cleared',90);
 INSERT INTO public."villaDues" VALUES ('50','Monthly maintenance','September',800,'2026-09-01','Pending',NULL),('60','Monthly maintenance','September',0,'2026-09-01','Pending',NULL);`);
 for(const file of ['005_payment_splitting.sql','006_revert_due_payment.sql','007_under_construction_dues.sql','008_payment_matching_status.sql'])await db.exec(fs.readFileSync(require('node:path').join(__dirname,'../supabase',file),'utf8'));
+await db.exec(fs.readFileSync(require('node:path').join(__dirname,'../supabase/009_protect_payment_villa.sql'),'utf8'));
 // Reapplying the migration is safe.
 await db.exec(fs.readFileSync(require('node:path').join(__dirname,'../supabase/008_payment_matching_status.sql'),'utf8'));
 await db.exec(`SET ROLE authenticated;SET test.uid='11111111-1111-1111-1111-111111111111';`);
@@ -55,6 +56,19 @@ assert.ok(split.payments.every(p=>p.PaymentStatus==='Unmatched'));const child=sp
 await db.query(`SELECT public.fernsvilla_apply_payment_to_dues($1,'[{"villa":"50","dueTyp":"Monthly maintenance","dueDate":"2026-10-01"}]')`,[child.id]);assert.equal(await pstatus(child.id),'Matched');assert.equal(await pstatus(2),'Unmatched');
 await assert.rejects(db.query(`SELECT public.fernsvilla_apply_payment_to_dues($1,'[{"villa":"50","dueTyp":"Monthly maintenance","dueDate":"2026-09-01"}]')`,[child.id]),/another month/);
 await db.exec(`SET test.uid='22222222-2222-2222-2222-222222222222';`);await assert.rejects(match([key('Large')]),/access required/);
-await db.exec(`RESET ROLE;`);await db.exec(fs.readFileSync(require('node:path').join(__dirname,'../supabase/diagnostics/payment_matching.sql'),'utf8'));
-for(const file of ['payment_matching_triggers.sql','payment_matching_cross_villa.sql','payment_matching_functions.sql'])await db.exec(fs.readFileSync(require('node:path').join(__dirname,'../supabase/diagnostics',file),'utf8'));
+await db.exec(`RESET ROLE;`);
+await assert.rejects(db.query(`UPDATE public."VillaPmt" SET "Villa"='126' WHERE id IN (35,56)`),/villa cannot change/);
+assert.deepEqual((await db.query(`SELECT id,"Villa" FROM public."VillaPmt" WHERE id IN (35,56) ORDER BY id`)).rows,[{id:35,Villa:'50'},{id:56,Villa:'60'}]);
+// A BEFORE trigger attempting collateral reassignment is caught after the update.
+await db.exec(`CREATE FUNCTION public.test_bad_villa() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN NEW."Villa":='126';RETURN NEW;END$$;
+CREATE TRIGGER test_bad_villa BEFORE UPDATE OF "PaymentStatus" ON public."VillaPmt" FOR EACH ROW EXECUTE FUNCTION public.test_bad_villa();`);
+await assert.rejects(db.query(`UPDATE public."VillaPmt" SET "PaymentStatus"='Unmatched' WHERE id=35`),/villa cannot change/);
+await db.exec(`DROP TRIGGER test_bad_villa ON public."VillaPmt";DROP FUNCTION public.test_bad_villa();`);
+await db.exec(`BEGIN;SET LOCAL fernsvilla.allow_payment_villa_correction='on';UPDATE public."VillaPmt" SET "Villa"='126' WHERE id=35;ROLLBACK;`);
+assert.equal((await db.query(`SELECT "Villa" FROM public."VillaPmt" WHERE id=35`)).rows[0].Villa,'50');
+await assert.rejects(db.query(`UPDATE public."VillaPmt" SET "Villa"='126' WHERE id=35`),/villa cannot change/);
+await db.query(`UPDATE public."VillaPmt" SET "PmtDate"='2026-10-14' WHERE id=35`);
+console.log('PASS payment villa guard: ordinary matching succeeds, mass changes and BEFORE-trigger reassignment roll back, transaction-local repair opt-in expires, date correction allowed');
+await db.exec(fs.readFileSync(require('node:path').join(__dirname,'../supabase/diagnostics/payment_matching.sql'),'utf8'));
+for(const file of ['payment_matching_triggers.sql','payment_matching_cross_villa.sql','payment_matching_functions.sql','payment_matching_rules.sql'])await db.exec(fs.readFileSync(require('node:path').join(__dirname,'../supabase/diagnostics',file),'utf8'));
 console.log('PASS status/matching: four-rupee credit is exact; every receipt and unrelated villa is preserved; migration retry, September normalization, zero NIL, monthly Unpaid, new payment Unmatched, atomic multi-due matching/rollback, partial and last reversal, due-side matching, split statuses/month restrictions, resident denial');await db.close();})().catch(e=>{console.error(e);process.exit(1)});

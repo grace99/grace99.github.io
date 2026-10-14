@@ -68,3 +68,12 @@ test('relational financial records never overwrite legacy JSON payment history',
 test('table permission errors do not discard a valid signed-in session',async()=>{
  const normal=handler();const {cloud}=setup((url,options)=>url.includes('/villaDues')?{status:401,data:{code:'42501',message:'permission denied'}}:normal(url,options));await assert.rejects(cloud.signIn('member@example.test','password'),/permission denied/);assert.equal(cloud.hasSession(),true);
 });
+test('admin feed reads newest events with bounded timestamp/ID pagination',async()=>{
+ const base=handler();let params;
+ const {cloud}=setup((url,options)=>{if(url.includes('fernsvilla_audit_events')){params=new URL(url).searchParams;return {data:Array.from({length:101},(_,i)=>({id:200-i,occurred_at:'2026-10-14T12:00:00+00:00'}))};}return base(url,options);});
+ await cloud.signIn('admin@example.test','password');const result=await cloud.adminFeed({id:300,occurred_at:'2026-10-14T12:00:00+00:00'});assert.equal(result.events.length,100);assert.equal(result.hasMore,true);assert.equal(params.get('order'),'occurred_at.desc,id.desc');assert.equal(params.get('limit'),'101');assert.equal(params.get('or'),'(occurred_at.lt.2026-10-14T12:00:00+00:00,and(occurred_at.eq.2026-10-14T12:00:00+00:00,id.lt.300))');
+ await assert.rejects(cloud.adminFeed({id:'1)malformed',occurred_at:'2026-10-14T12:00:00Z'}),/Invalid activity cursor/);
+});
+test('editors and residents cannot request the administrator feed',async()=>{
+ for(const role of ['editor','resident']){const {cloud,calls}=setup(handler(role));await cloud.signIn('member@example.test','password');await assert.rejects(cloud.adminFeed(),/Administrator access/);assert.equal(calls.filter(c=>c.url.includes('fernsvilla_audit_events')).length,0);}
+});

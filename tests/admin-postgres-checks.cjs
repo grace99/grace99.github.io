@@ -1,0 +1,31 @@
+// Invoked by the full PostgreSQL migration regression with its existing ledger fixtures.
+module.exports=async(db)=>{
+ const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+ await db.exec(`RESET ROLE;SET test.uid='';CREATE TABLE auth.users(id uuid PRIMARY KEY,email text,last_sign_in_at timestamptz,encrypted_password text);CREATE TABLE public.fernsvilla_state(id integer PRIMARY KEY,data jsonb,revision bigint);
+ INSERT INTO auth.users(id,email,encrypted_password) VALUES ('11111111-1111-1111-1111-111111111111','admin@example.test','PRIVATE'),('22222222-2222-2222-2222-222222222222','resident@example.test','PRIVATE'),('33333333-3333-3333-3333-333333333333','editor@example.test','PRIVATE');
+ INSERT INTO public.fernsvilla_members VALUES ('33333333-3333-3333-3333-333333333333','editor');`);
+ const sql=fs.readFileSync(path.join(__dirname,'../supabase/014_admin_center.sql'),'utf8');await db.exec(sql);
+ const count=async()=>Number((await db.query('SELECT count(*)::int AS n FROM public.fernsvilla_audit_events')).rows[0].n);
+ const historyCount=await count();assert.ok(historyCount>0);await db.exec(sql);assert.equal(await count(),historyCount);
+ await db.exec(`UPDATE auth.users SET last_sign_in_at='2026-10-14T12:00:00Z' WHERE email='admin@example.test';UPDATE auth.users SET email=email WHERE email='admin@example.test';`);
+ const signins=(await db.query(`SELECT * FROM public.fernsvilla_audit_events WHERE event_type='SIGN_IN'`)).rows;assert.equal(signins.length,1);assert.equal(signins[0].actor_email,'admin@example.test');assert.equal(signins[0].source,'Supabase Auth');assert.equal(signins[0].old_record,null);assert.equal(signins[0].new_record,null);assert.ok(!JSON.stringify(signins).includes('PRIVATE'));
+ await db.exec(`UPDATE public."villaMaster" SET "Name"='SQL updated owner' WHERE "Villa"='50';`);
+ const direct=(await db.query(`SELECT * FROM public.fernsvilla_audit_events WHERE entity='villaMaster' ORDER BY id DESC LIMIT 1`)).rows[0];assert.equal(direct.event_type,'UPDATE');assert.equal(direct.source,'Database');assert.equal(direct.actor_id,null);assert.equal(direct.new_record.Name,'SQL updated owner');
+ const before=await count();await db.exec(`UPDATE public."villaMaster" SET "Name"="Name" WHERE "Villa"='50';`);assert.equal(await count(),before);
+ await assert.rejects(db.exec(`DO $$ BEGIN UPDATE public."villaMaster" SET "Name"='rollback' WHERE "Villa"='50';RAISE EXCEPTION 'rollback test';END $$;`),/rollback test/);assert.equal(await count(),before);
+ await db.exec(`SET ROLE anon;`);await assert.rejects(db.query('SELECT * FROM public.fernsvilla_audit_events'),/permission denied/);
+ await db.exec(`RESET ROLE;SET ROLE authenticated;SET test.uid='22222222-2222-2222-2222-222222222222';`);assert.equal(await count(),0);await assert.rejects(db.query(`SELECT public.fernsvilla_load_monthly_dues('2026-12-01')`),/access required/);await assert.rejects(db.query(`INSERT INTO public.fernsvilla_audit_events(event_type,entity,source) VALUES ('SIGN_IN','fake','fake')`),/permission denied/);
+ await db.exec(`SET test.uid='33333333-3333-3333-3333-333333333333';`);assert.equal(await count(),0);await assert.rejects(db.query(`SELECT public.fernsvilla_load_monthly_dues_core('2026-12-01')`),/permission denied/);
+ const loaded=(await db.query(`SELECT public.fernsvilla_load_monthly_dues('2026-12-01') AS result`)).rows[0].result;assert.ok(loaded.inserted>0);assert.equal(await count(),0);
+ await db.exec(`SET test.uid='11111111-1111-1111-1111-111111111111';`);
+ const jobs=(await db.query(`SELECT * FROM public.fernsvilla_audit_events WHERE event_type='MONTHLY_LOAD'`)).rows;assert.equal(jobs.length,1);assert.equal(jobs[0].actor_email,'editor@example.test');assert.equal(jobs[0].metadata.inserted,loaded.inserted);
+ const dueEvents=(await db.query(`SELECT * FROM public.fernsvilla_audit_events WHERE event_type='INSERT' AND entity='villaDues' AND metadata->>'operation'='Monthly dues load'`)).rows;assert.equal(dueEvents.length,loaded.inserted);assert.ok(dueEvents.every(e=>e.transaction_id===jobs[0].transaction_id));
+ await db.query(`INSERT INTO public."VillaPmt"("Villa","PmtDate","PmtAmt") VALUES ('50','2026-12-02',999)`);
+ const pay=(await db.query(`SELECT * FROM public.fernsvilla_audit_events WHERE entity='VillaPmt' ORDER BY id DESC LIMIT 1`)).rows[0];assert.equal(pay.source,'Authenticated request');assert.equal(pay.actor_email,'admin@example.test');assert.equal(Number(pay.new_record.PmtAmt),999);
+ await assert.rejects(db.query(`DELETE FROM public.fernsvilla_audit_events`),/permission denied/);
+ await db.exec(`RESET ROLE;SET test.uid='';DELETE FROM public."VillaPmt" WHERE "PmtAmt"=999;INSERT INTO public.fernsvilla_state VALUES (1,'{}',0);UPDATE public.fernsvilla_state SET revision=1;TRUNCATE public.fernsvilla_state;`);
+ assert.equal((await db.query(`SELECT event_type FROM public.fernsvilla_audit_events WHERE entity='VillaPmt' ORDER BY id DESC LIMIT 1`)).rows[0].event_type,'DELETE');
+ assert.equal((await db.query(`SELECT event_type FROM public.fernsvilla_audit_events WHERE entity='fernsvilla_state' ORDER BY id DESC LIMIT 1`)).rows[0].event_type,'TRUNCATE');
+ const final=await count();await db.exec(sql);assert.equal(await count(),final,'reinstall must not reimport newer history and duplicate captured events');
+ console.log('PASS admin database: sign-in capture without credentials, direct SQL/create/update/delete/truncate, no-op/rollback, historical import/reinstall, monthly load attribution/counts, admin-only reads and immutable app access');
+};

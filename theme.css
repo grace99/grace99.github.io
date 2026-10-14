@@ -65,3 +65,47 @@
 
 :root[data-theme=dark] .column-picker-panel{background:var(--surface);color:var(--ink);border-color:var(--line)}
 :root[data-theme=dark] .admin-error{color:#ffaca0}
+
+/* Warm sage surfaces reduce glare in the light theme. */
+:root[data-theme=light]{--green:#0b7564;--ink:#253b35;--muted:#52675f;--line:#c6d0c2;--bg:#dde3d8;--surface:#eef0e7;--raised:#e1e7db;--field:#f0f2e8;--shadow:0 5px 18px #344c3c0a;color-scheme:light}
+:root[data-theme=light] body{background:var(--bg);color:var(--ink)}
+:root[data-theme=light] :is(.card,.modal,.account-panel,.column-picker-panel){background:var(--surface);border-color:var(--line);box-shadow:var(--shadow)}
+:root[data-theme=light] .topbar{background:#e5eadf;border-color:var(--line)}
+:root[data-theme=light] .grid-filters{background:#e7ecdf}
+:root[data-theme=light] :is(h1,h2,h3,.crumb b,.stat-value,td strong,.issue h3,.notice h3,.resource h3,.modal h2,.summary-row strong,.account-menu summary){color:var(--ink)}
+:root[data-theme=light] :is(.crumb,.search,.subtitle,.stat-label,.stat-foot,.card-desc,.legend,.summary-row small,.issue p,.table-footer,.notice p,.notice .date,.resource p,.policy p,.footer,.empty,.modal label,.account-panel p,.account-chevron,.grid-field>span,.grid-months>span,.split-receipt p,.payment-detail-grid small){color:var(--muted)}
+:root[data-theme=light] :is(.search,.filterbar input,.filterbar select,.grid-field input,.grid-field select,.modal input,.modal select,.modal textarea){background:var(--field);color:var(--ink);border-color:var(--line)}
+:root[data-theme=light] .search input{color:var(--ink)}
+:root[data-theme=light] input::placeholder,:root[data-theme=light] textarea::placeholder{color:#5a6e64;opacity:1}
+:root[data-theme=light] :is(.modal input,.modal select,.modal textarea):focus{background:var(--field);border-color:var(--green)}
+:root[data-theme=light] .modal input[readonly]{background:var(--raised);color:var(--muted)}
+:root[data-theme=light] .btn{background:var(--raised);border-color:#b9c7b7;color:#365446;box-shadow:none}
+:root[data-theme=light] .btn:hover{background:#d2dfd0}
+:root[data-theme=light] .btn.primary{background:#0b7564;color:#fff;border-color:#0b7564}
+:root[data-theme=light] .btn.primary:hover{background:#086454}
+:root[data-theme=light] :is(.icon-btn,.text-btn,.grid-action){color:#2d5c4b}
+:root[data-theme=light] :is(.icon-btn:hover,.text-btn:hover,.grid-action:hover,.account-menu summary:hover,.account-menu[open] summary){background:#d8e4d5}
+:root[data-theme=light] .grid-action{background:var(--raised);border-color:#b9c7b7}
+:root[data-theme=light] .grid-action.revert-action{color:#8c4b29}
+:root[data-theme=light] :is(.modal header,.modal .actions,.summary-row,.issue,.table-footer,.grid-months,.bulk-preview){border-color:var(--line)}
+:root[data-theme=light] .summary-row{background:#e4ebdd}
+:root[data-theme=light] th{background:#dbe3d5;color:#445e53;border-color:var(--line)}
+:root[data-theme=light] td{color:#344b41;border-color:#ccd6c7}
+:root[data-theme=light] tbody tr:nth-child(even){background:#e7ecdf}
+:root[data-theme=light] tbody tr:hover{background:#dce6d5}
+:root[data-theme=light] :is(.dues-table,.payments-table) tr:not(.payment-detail)>:last-child{background:var(--surface);border-color:var(--line)}
+:root[data-theme=light] :is(.dues-table,.payments-table) thead th:last-child{background:#dbe3d5}
+:root[data-theme=light] .payment-detail td{background:#dfe9da;color:var(--muted);border-color:var(--line)}
+:root[data-theme=light] .payment-detail-grid strong{color:#344b41}
+:root[data-theme=light] .month-button{background:#d9e2d1;color:#405b4d;box-shadow:none}
+:root[data-theme=light] .month-button:hover{background:#c9d9bf}
+:root[data-theme=light] .month-button.selected{background:#0b7564;color:#fff}
+:root[data-theme=light] .sort-header span{color:#52675f}
+:root[data-theme=light] .chart text{fill:#52675f}
+:root[data-theme=light] .chart line{stroke:#b7c5b2}
+:root[data-theme=light] [data-trend-segment=unpaid]{fill:#9bbdac}
+:root[data-theme=light] .legend span:last-child i{background:#9bbdac!important}
+:root[data-theme=light] :is(.split-receipt,#split-totals){background:#dfe9da;border-color:var(--line);color:var(--ink)}
+:root[data-theme=light] .avatar{border-color:var(--line)}
+:root[data-theme=light] .dot{box-shadow:0 0 0 2px #e5eadf}
+:root[data-theme=light] :is(.table-wrap,.modal){scrollbar-color:#a3b8a2 transparent}

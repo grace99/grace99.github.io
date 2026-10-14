@@ -56,3 +56,9 @@
 :root[data-theme=dark] .dot{box-shadow:0 0 0 2px var(--surface)}
 :root[data-theme=dark] :is(.table-wrap,.modal){scrollbar-color:#4b6879 transparent}
 :root[data-theme=dark] :is(button,a,input,select,textarea):focus-visible{outline-color:#70e0c4}
+
+:root[data-theme=dark] .grid-action{background:var(--bg);color:var(--ink);border-color:var(--line)}
+:root[data-theme=dark] .grid-action:hover{background:#23443e;border-color:#478f7b}
+:root[data-theme=dark] .grid-action.revert-action{color:#f3b28d}
+
+:root[data-theme=dark] :is(.dues-table,.payments-table) tr:not(.payment-detail)>:last-child{background:var(--surface,#172b34)}

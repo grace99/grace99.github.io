@@ -55,3 +55,5 @@ Overview finance cards use the previous calendar month throughout the current ca
 Stat cards on Overview, Analytics, Dues and Payments open read-only drilldown grids with column labels, relevant filters, date/month controls and sorting. Modal filters do not change the parent page's filters or data. Tests: `node --test tests/*.test.cjs` and the optional Playwright `tests/check-overview-browser.cjs` (`FERNS_TEST_URL`).
 
 The six-month dues collection trend groups payment allocations and remaining outstanding amounts by due date month, including partial payments. Receipt dates do not affect the trend. Each paid/unpaid bar opens its corresponding allocation/dues grid; totals and collection rate cover the displayed months.
+
+Grids use compact filter ribbons, month buttons, row spacing and finance summaries. Row actions have visible button borders, icons and explanatory hover tooltips. Finance action columns remain visible during horizontal scrolling, and unmatched dues omit empty payment-detail rows. The Overview browser check verifies that directory, dues and payment rows fit in the opening view at 1366 × 768.

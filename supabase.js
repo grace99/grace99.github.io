@@ -12,14 +12,14 @@ window.FernsCloud = (() => {
     if (value.startsWith('sb_publishable_')) return true;
     try { const payload = JSON.parse(atob(value.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))); return payload.role === 'anon'; } catch { return false; }
   }
-  async function request(path, { method = 'GET', body, auth = true, prefer } = {}) {
+  async function request(path, { method = 'GET', body, auth = true, prefer, accessToken } = {}) {
     if (!publicKey(key)) throw Error('Configure a valid public Supabase publishable or anon key.');
     if (auth && session && (session.expires_at || 0) <= Date.now()/1000 + 60) await refresh();
     const controller = new AbortController(); const timeout = setTimeout(()=>controller.abort(),15000);
     try {
       const headers = { apikey: key, 'Content-Type': 'application/json' };
       if (prefer) headers.Prefer = prefer;
-      if (auth && session) headers.Authorization = 'Bearer ' + session.access_token;
+      if (accessToken) headers.Authorization='Bearer '+accessToken;else if (auth && session) headers.Authorization = 'Bearer ' + session.access_token;
       const response = await fetch(config.url + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal: controller.signal });
       const text = await response.text(); let data; try { data = JSON.parse(text); } catch { data = null; }
       if (!response.ok) {
@@ -30,12 +30,13 @@ window.FernsCloud = (() => {
     } catch(error) { if (error.name==='AbortError') throw Error('Supabase request timed out. Please retry.'); throw error; } finally { clearTimeout(timeout); }
   }
   async function refresh() {
-    if (!refreshing) refreshing = request('/auth/v1/token?grant_type=refresh_token',{method:'POST',auth:false,body:{refresh_token:session?.refresh_token}}).then(data=>storeSession({...data,expires_at:Math.floor(Date.now()/1000)+data.expires_in})).catch(error=>{storeSession(null);throw error;}).finally(()=>refreshing=null);
+    if (!refreshing) refreshing = request('/auth/v1/token?grant_type=refresh_token',{method:'POST',auth:false,body:{refresh_token:session?.refresh_token}}).then(data=>storeSession({...data,recovery:!!session?.recovery,expires_at:Math.floor(Date.now()/1000)+data.expires_in})).catch(error=>{storeSession(null);throw error;}).finally(()=>refreshing=null);
     return refreshing;
   }
   function validate(data) { return data && ['villas','issues','team','resources','posts','payments'].every(name=>Array.isArray(data[name])); }
   async function load() {
     if (!session) throw Error('Sign in to access your association.');
+    if(session.recovery)throw Error('Finish resetting your password before accessing association data.');
     const members = await request('/rest/v1/fernsvilla_members?select=role&user_id=eq.'+encodeURIComponent(session.user.id));
     role = members?.[0]?.role;
     if (!role) throw Error('Your account has not been added to the association. Ask the administrator to grant membership.');
@@ -76,6 +77,28 @@ window.FernsCloud = (() => {
     saveVilla:async(villa,original)=>{if(!session||!['admin','editor'].includes(role))throw Error('Administrator or editor access is required to change villa records.');return directory.save(villa,original);},
     role:()=>role, canEdit:()=>!!session && ['admin','editor'].includes(role), load, save,
     setPublicKey(value) { if (!publicKey(value.trim())) throw Error('Use a public publishable or anon key, never a secret or service-role key.');localStorage.setItem('fernsvilla-public-key',value.trim()); },
+    hasRecovery:()=>!!session?.recovery,
+    clearRecovery(){if(session?.recovery){storeSession(null);role=null;revision=null;}},
+    async sendPasswordReset(email){
+      if(!email?.trim())throw Error('Enter your email address.');
+      const redirect=config.passwordResetRedirect;
+      if(!redirect||!redirect.startsWith('https://'))throw Error('Password recovery redirect is not configured.');
+      await request('/auth/v1/recover?redirect_to='+encodeURIComponent(redirect),{method:'POST',auth:false,body:{email:email.trim()}});
+    },
+    async acceptRecovery(params){
+      if(params.get('type')!=='recovery'||!params.get('access_token')||!params.get('refresh_token'))throw Error('This recovery link is incomplete. Request a new link.');
+      const user=await request('/auth/v1/user',{auth:false,accessToken:params.get('access_token')});
+      if(!user?.id)throw Error('This recovery link is invalid. Request a new link.');
+      const expires=Number(params.get('expires_in'))||3600;
+      role=null;revision=null;
+      storeSession({access_token:params.get('access_token'),refresh_token:params.get('refresh_token'),user,recovery:true,expires_at:Math.floor(Date.now()/1000)+Math.max(1,Math.min(expires,3600))});
+    },
+    async setNewPassword(password){
+      if(!session?.recovery)throw Error('Open a valid password recovery link first.');
+      if(typeof password!=='string'||password.length<8)throw Error('Use at least 8 characters for your new password.');
+      await request('/auth/v1/user',{method:'PUT',body:{password}});
+      try{await request('/auth/v1/logout',{method:'POST'});}catch{}finally{storeSession(null);role=null;revision=null;}
+    },
     async signIn(email,password) { const data=await request('/auth/v1/token?grant_type=password',{method:'POST',auth:false,body:{email,password}});storeSession({...data,expires_at:Math.floor(Date.now()/1000)+data.expires_in});return load(); },
     async signOut() { try { if(session) await request('/auth/v1/logout',{method:'POST'}); } finally { storeSession(null); role=null;revision=null; } }
   };

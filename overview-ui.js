@@ -1,10 +1,10 @@
 function renderOverviewStats(monthly){
  const period=FernsOverview.reportingMonth(),plots=FernsOverview.plots(db.villas),records=FernsOverview.records(db.dues,db.payments,monthly?period.key:null);
  const status=p=>String(p.resStatus||p.type||'').trim().toLowerCase();
- const occupied=plots.filter(p=>['occupied','owner occupied','tenant occupied'].includes(status(p))).length,construction=plots.filter(p=>status(p)==='under construction').length;
+ const construction=plots.filter(p=>status(p)==='under construction').length;
  const paid=records.payments.reduce((sum,p)=>sum+financialCents(p.PmtAmt),0)/100,outstanding=records.dues.reduce((sum,d)=>sum+financialCents(dueOutstanding(d)),0)/100;
  const issues=db.issues.filter(i=>i.status!=='Resolved');
- return `<div class="stats">${stat('Total villas',plots.length,`${occupied} occupied · ${construction} under construction`,'home',{kind:'plots',rows:plots})}${stat('Payments received',money(paid),monthly?`${period.label} · receipt date`:'All receipt dates','wallet',{kind:'payments',rows:records.payments,period:monthly?period.label:null})}${stat('Outstanding dues',money(outstanding),`${monthly?period.label+' · ':''}${new Set(records.dues.map(d=>d.villa)).size} villa accounts with unpaid dues`,'chart',{kind:'dues',rows:records.dues,period:monthly?period.label:null})}${stat('Open issues',issues.length,`${issues.filter(i=>i.status==='In progress').length} in progress`,'tool',{kind:'issues',rows:issues})}</div>`;
+ return `<div class="stats">${stat('Total villas',plots.length,`${construction} under construction`,'home',{kind:'plots',rows:plots})}${stat('Payments received',money(paid),monthly?`${period.label} · receipt date`:'All receipt dates','wallet',{kind:'payments',rows:records.payments,period:monthly?period.label:null})}${stat('Outstanding dues',money(outstanding),`${monthly?period.label+' · ':''}${new Set(records.dues.map(d=>d.villa)).size} villa accounts with unpaid dues`,'chart',{kind:'dues',rows:records.dues,period:monthly?period.label:null})}${stat('Open issues',issues.length,`${issues.filter(i=>i.status==='In progress').length} in progress`,'tool',{kind:'issues',rows:issues})}</div>`;
 }
 function openStatDrill(key){
  const drill=statDrills.get(key);if(!drill)return;
@@ -16,3 +16,5 @@ function openStatDrill(key){
  FernsGrid.callbacks.set(gridKey,draw);draw();document.querySelector('.stat-modal [data-action=close]').focus();
 }
 document.addEventListener('click',event=>{const button=event.target.closest('[data-stat-drill]');if(button)openStatDrill(button.dataset.statDrill);});
+
+document.addEventListener('keydown',event=>{const bar=event.target.closest('svg [data-stat-drill]');if(bar&&['Enter',' '].includes(event.key)){event.preventDefault();openStatDrill(bar.dataset.statDrill);}});

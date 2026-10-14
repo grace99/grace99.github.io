@@ -48,8 +48,10 @@ The optional Playwright check `tests/check-theme-browser.cjs` validates device p
 
 ## Overview and stat drilldowns
 
-Overview contains no headline, Record payment shortcut, Export report shortcut or Recent dues section. Export report is available on Dues. Total villas counts individual numeric plots within permanent hyphenated groups (25-26-27 counts as three); its occupied and under-construction sub-counts also use plots. Account identifiers remain unchanged. The villa drilldown shows both individual plot and source villa account.
+Overview contains no headline, Record payment shortcut, Export report shortcut or Recent dues section. Export report is available on Dues. Total villas counts individual numeric plots within permanent hyphenated groups (25-26-27 counts as three); its sub-stat shows only under-construction plots. Account identifiers remain unchanged. The villa drilldown shows both individual plot and source villa account.
 
-Overview finance cards use the previous calendar month through day 10, then the current calendar month from day 11, based on the browser's local date. Payments received uses receipt date and excludes archived split parents; outstanding dues uses due date and positive uncleared amounts. Cards display the reporting month. Other finance pages retain their filtered or all-time totals.
+Overview finance cards use the previous calendar month throughout the current calendar month, based on the browser's local date. Payments received uses receipt date and excludes archived split parents; outstanding dues uses due date and positive uncleared amounts. Cards display the reporting month. Other finance pages retain their filtered or all-time totals.
 
 Stat cards on Overview, Analytics, Dues and Payments open read-only drilldown grids with column labels, relevant filters, date/month controls and sorting. Modal filters do not change the parent page's filters or data. Tests: `node --test tests/*.test.cjs` and the optional Playwright `tests/check-overview-browser.cjs` (`FERNS_TEST_URL`).
+
+The six-month dues collection trend groups payment allocations and remaining outstanding amounts by due date month, including partial payments. Receipt dates do not affect the trend. Each paid/unpaid bar opens its corresponding allocation/dues grid; totals and collection rate cover the displayed months.

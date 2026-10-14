@@ -47,7 +47,12 @@ function financeModal(action,id){if(!allowEdit())return;if(!cloud.configured){to
 }
 document.addEventListener('click',event=>{const button=event.target.closest('[data-action]');if(!button||!['new-due','new-payment','bulk-dues','apply-payment','apply-from-payment','map-payment-villa','split-payment','revert-due'].includes(button.dataset.action))return;event.stopImmediatePropagation();financeModal(button.dataset.action,button.dataset.index??button.dataset.id);},true);
 
-function financeTrend(){const now=new Date();const months=Array.from({length:6},(_,index)=>new Date(now.getFullYear(),now.getMonth()-5+index,1));const keys=months.map(d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);return {labels:months.map(d=>d.toLocaleDateString(undefined,{month:'short'})),paid:keys.map(key=>activePayments().filter(p=>p.PmtDate?.slice(0,7)===key).reduce((sum,p)=>sum+financialCents(p.PmtAmt),0)/100),unpaid:keys.map(key=>db.dues.filter(d=>d.dueDate?.slice(0,7)===key&&d.dueStatus!=='Cleared').reduce((sum,d)=>sum+financialCents(dueOutstanding(d)),0)/100)};}
+function financeTrend(){
+ const now=new Date(),months=Array.from({length:6},(_,i)=>new Date(now.getFullYear(),now.getMonth()-5+i,1));
+ const allocations=paymentAllocationRows(activePayments());
+ const buckets=months.map(date=>{const key=`${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;return {label:date.toLocaleDateString(undefined,{month:'short',year:'numeric'}),paidRows:allocations.filter(a=>a.dueDate?.slice(0,7)===key),unpaidRows:db.dues.filter(d=>d.dueDate?.slice(0,7)===key&&dueOutstanding(d)>0)};});
+ return {buckets,labels:months.map(d=>d.toLocaleDateString(undefined,{month:'short'})),paid:buckets.map(b=>b.paidRows.reduce((sum,a)=>sum+financialCents(a.amount),0)/100),unpaid:buckets.map(b=>b.unpaidRows.reduce((sum,d)=>sum+financialCents(dueOutstanding(d)),0)/100)};
+}
 
 function openPaymentMatching(id){
  const payment=db.payments.find(p=>String(p.id)===String(id));

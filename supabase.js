@@ -56,7 +56,7 @@ window.FernsCloud = (() => {
     if (!session || !['admin','editor'].includes(role)) throw Error('Administrator or editor access is required to change association records.');
     const balances = new Map(ledgerVillas.map(villa => [villa.id, {id:villa.id,due:villa.due,paid:villa.paid}]));
     for (const villa of data.villas) balances.set(villa.id,{id:villa.id,due:villa.due,paid:villa.paid});
-    const {dues,payments,...other}=data;
+    const {dues,payments,allocations,...other}=data;
     const stored = {...other,payments:legacyPayments,villas:[...balances.values()]};
     const result = await request('/rest/v1/rpc/fernsvilla_save',{method:'POST',body:{expected_revision:revision,new_data:stored}});
     ledgerVillas = stored.villas;

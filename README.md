@@ -45,3 +45,13 @@ Cleared dues can be reverted by admins/editors after installing `supabase/006_re
 The sun/moon button in the top-right header switches between light and dark themes across pages, grids, forms, account controls and dialogs. On a new browser the theme follows the device preference, including changes while the app is open. Choosing a theme saves it in `ferns-theme` local storage and retains it across navigation and reloads. It requires no Supabase migration.
 
 The optional Playwright check `tests/check-theme-browser.cjs` validates device preferences, saved overrides, all pages, finance dialogs and mobile layout. Set `FERNS_TEST_URL` to the local server URL (defaults to port 8013 for this check).
+
+## Overview and stat drilldowns
+
+Overview contains no headline, Record payment shortcut, Export report shortcut or Recent dues section. Export report is available on Dues. Total villas counts individual numeric plots within permanent hyphenated groups (25-26-27 counts as three); its sub-stat shows only under-construction plots. Account identifiers remain unchanged. The villa drilldown shows both individual plot and source villa account.
+
+Overview finance cards use the previous calendar month throughout the current calendar month, based on the browser's local date. Payments received uses receipt date and excludes archived split parents; outstanding dues uses due date and positive uncleared amounts. Cards display the reporting month. Other finance pages retain their filtered or all-time totals.
+
+Stat cards on Overview, Analytics, Dues and Payments open read-only drilldown grids with column labels, relevant filters, date/month controls and sorting. Modal filters do not change the parent page's filters or data. Tests: `node --test tests/*.test.cjs` and the optional Playwright `tests/check-overview-browser.cjs` (`FERNS_TEST_URL`).
+
+The six-month dues collection trend groups payment allocations and remaining outstanding amounts by due date month, including partial payments. Receipt dates do not affect the trend. Each paid/unpaid bar opens its corresponding allocation/dues grid; totals and collection rate cover the displayed months.

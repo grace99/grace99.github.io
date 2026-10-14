@@ -43,3 +43,12 @@ table{font-size:14px;min-width:780px}th{font-size:12px;letter-spacing:.3px}td{li
 .split-row{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) 35px}.split-row label,.split-row input{min-width:0}.split-receipt{overflow-wrap:anywhere}@media(max-width:450px){.split-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 28px}}
 .revert-action{color:#aa6643}.revert-action:hover{color:#8e4930;background:#fff1e8}
 .sidebar-toggle{display:inline-flex;align-items:center;justify-content:center;margin-right:12px;width:36px;height:36px;flex-shrink:0}.sidebar-close,.sidebar-backdrop{display:none}@media(min-width:801px){body.sidebar-collapsed .sidebar{display:none}body.sidebar-collapsed .main{margin-left:0}}@media(max-width:800px){.sidebar-close{display:flex;position:absolute;right:9px;top:3px;color:#bdddd7}.sidebar-backdrop.visible{display:block;position:fixed;inset:0;background:#102c476b;z-index:8;backdrop-filter:blur(2px)}.sidebar{z-index:10}.sidebar-toggle{margin-right:7px}.sidebar-close:hover{background:#ffffff17}}
+
+/* Villa/month allocations in the split dialog. */
+.split-row{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,.8fr) 35px}.split-row label{min-width:0}.split-row select{min-width:0}.finance-modal:has(#split-rows){width:760px}@media(max-width:600px){.split-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 28px;padding-bottom:12px;border-bottom:1px solid var(--line)}.split-row label:first-child{grid-column:1 / -1}.split-row .icon-btn{grid-column:3;grid-row:2}}
+/* Keep financial dialogs within the viewport, including wide allocation forms. */
+.modal-backdrop{grid-template-columns:minmax(0,1fr)}.modal{min-width:0}.split-receipt{overflow-wrap:anywhere}
+.stat-drill{text-align:left;width:100%;cursor:pointer}.stat-drill:focus-visible{outline:3px solid #34b6a1;outline-offset:3px}.stat-modal{width:1200px}.stat-modal .grid-filters{margin-top:16px}.stat-modal .table-wrap{border:1px solid var(--line);border-radius:10px}
+.dues-views{margin-bottom:22px}.payment-detail-grid+.payment-detail-grid{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}[data-match-amount]{min-width:100px}.dues-table{min-width:1300px}
+
+.trend-bar{cursor:pointer}.trend-bar:focus{outline:2px solid var(--primary,#179d87);outline-offset:3px}

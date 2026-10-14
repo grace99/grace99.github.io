@@ -18,6 +18,7 @@ function handler(role='admin',saveResult=8){return (url,options)=>{
  if(url.includes('/villaMaster'))return {data:[]};
  if(url.includes('fernsvilla_save'))return {data:saveResult};
  if(url.includes('/auth/v1/logout'))return {data:{}};
+ if(url.includes('/rest/v1/villaPaymentAllocations'))return {data:[]};
  throw Error('Unexpected request '+url);
 };}
 test('member login loads shared state, sends user access token and saves with revision',async()=>{

@@ -112,3 +112,5 @@
 
 :root[data-theme=light] .badge.partial{background:#dce5ea;color:#345369;border-color:#b5c7cf}
 :root[data-theme=dark] .badge.partial{background:#253e5b;color:#b3d2f8;border-color:#3c5c80}
+
+:root[data-theme=dark] .trend-amount-tooltip{background:#213c4b;color:#e2edf4;border-color:#527483}

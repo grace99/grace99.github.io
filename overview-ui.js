@@ -18,3 +18,17 @@ function openStatDrill(key){
 document.addEventListener('click',event=>{const button=event.target.closest('[data-stat-drill]');if(button)openStatDrill(button.dataset.statDrill);});
 
 document.addEventListener('keydown',event=>{const bar=event.target.closest('svg [data-stat-drill]');if(bar&&['Enter',' '].includes(event.key)){event.preventDefault();openStatDrill(bar.dataset.statDrill);}});
+
+window.FernsTrendTooltip=(()=>{
+ let tooltip=null,anchor=null;
+ function hide(){anchor?.removeAttribute('aria-describedby');anchor=null;if(tooltip)tooltip.hidden=true;}
+ function position(x,y){const box=tooltip.getBoundingClientRect();tooltip.style.left=Math.max(8,Math.min(x+12,innerWidth-box.width-8))+'px';tooltip.style.top=Math.max(8,Math.min(y+14,innerHeight-box.height-8))+'px';}
+ function show(target,event){if(anchor!==target)hide();anchor=target;if(!tooltip){tooltip=document.createElement('div');tooltip.id='trend-amount-tooltip';tooltip.className='trend-amount-tooltip';tooltip.setAttribute('role','tooltip');document.body.append(tooltip);}tooltip.textContent=target.dataset.trendTooltip;tooltip.hidden=false;target.setAttribute('aria-describedby',tooltip.id);const rect=target.getBoundingClientRect();position(event.clientX??rect.left+rect.width/2,event.clientY??rect.bottom);}
+ document.addEventListener('pointerover',event=>{const target=event.target.closest('[data-trend-tooltip]');if(target)show(target,event);});
+ document.addEventListener('pointermove',event=>{if(anchor&&event.target.closest('[data-trend-tooltip]')===anchor)position(event.clientX,event.clientY);});
+ document.addEventListener('pointerout',event=>{if(event.target.closest('[data-trend-tooltip]')&&!event.relatedTarget?.closest?.('[data-trend-tooltip]'))hide();});
+ document.addEventListener('focusin',event=>{const target=event.target.closest('[data-trend-tooltip]');if(target)show(target,event);else hide();});
+ document.addEventListener('focusout',event=>{if(event.target.closest('[data-trend-tooltip]'))hide();});
+ document.addEventListener('click',hide);document.addEventListener('keydown',event=>{if(event.key==='Escape')hide();});window.addEventListener('scroll',hide,true);
+ return {hide};
+})();

@@ -125,3 +125,5 @@ td{padding:7px 12px;line-height:1.35}
 
 .badge.partial{background:#e4edf9;color:#315a86;border-color:#bdcfe5}
 .forgot-password{margin-top:10px;padding:8px 0}.password-notice{font-size:14px;line-height:1.6;margin-top:14px;color:var(--ink)}
+
+.trend-amount-tooltip{position:fixed;z-index:45;pointer-events:none;max-width:calc(100vw - 24px);padding:10px 14px;border-radius:8px;background:#193d35;color:#fff;border:1px solid #507565;box-shadow:0 5px 18px #122c352b;font-size:14px;line-height:1.65;white-space:pre-line;font-variant-numeric:tabular-nums}

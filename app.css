@@ -48,3 +48,4 @@ table{font-size:14px;min-width:780px}th{font-size:12px;letter-spacing:.3px}td{li
 .split-row{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,.8fr) 35px}.split-row label{min-width:0}.split-row select{min-width:0}.finance-modal:has(#split-rows){width:760px}@media(max-width:600px){.split-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 28px;padding-bottom:12px;border-bottom:1px solid var(--line)}.split-row label:first-child{grid-column:1 / -1}.split-row .icon-btn{grid-column:3;grid-row:2}}
 /* Keep financial dialogs within the viewport, including wide allocation forms. */
 .modal-backdrop{grid-template-columns:minmax(0,1fr)}.modal{min-width:0}.split-receipt{overflow-wrap:anywhere}
+.stat-drill{text-align:left;width:100%;cursor:pointer}.stat-drill:focus-visible{outline:3px solid #34b6a1;outline-offset:3px}.stat-modal{width:1200px}.stat-modal .grid-filters{margin-top:16px}.stat-modal .table-wrap{border:1px solid var(--line);border-radius:10px}

@@ -64,3 +64,4 @@
 :root[data-theme=dark] :is(.dues-table,.payments-table) tr:not(.payment-detail)>:last-child{background:var(--surface,#172b34)}
 
 :root[data-theme=dark] .column-picker-panel{background:var(--surface);color:var(--ink);border-color:var(--line)}
+:root[data-theme=dark] .admin-error{color:#ffaca0}

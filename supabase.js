@@ -65,6 +65,14 @@ window.FernsCloud = (() => {
   return {
     configured: publicKey(key), hasSession:()=>!!session, user:()=>session?.user,
     finance,
+    async adminFeed(cursor=null) {
+      if(!session||role!=='admin')throw Error('Administrator access is required to view the activity feed.');
+      const params=new URLSearchParams({select:'*',order:'occurred_at.desc,id.desc',limit:'101'});
+      if(cursor!==null){if(!/^\d+$/.test(String(cursor?.id))||!/^\d{4}-\d{2}-\d{2}T[\d:.]+(?:Z|[+-]\d{2}:\d{2})$/.test(cursor?.occurred_at)||Number.isNaN(Date.parse(cursor.occurred_at)))throw Error('Invalid activity cursor.');params.set('or',`(occurred_at.lt.${cursor.occurred_at},and(occurred_at.eq.${cursor.occurred_at},id.lt.${cursor.id}))`);}
+      const rows=await request('/rest/v1/fernsvilla_audit_events?'+params);
+      if(!Array.isArray(rows))throw Error('The activity feed returned an invalid response.');
+      return {events:rows.slice(0,100),hasMore:rows.length>100};
+    },
     saveVilla:async(villa,original)=>{if(!session||!['admin','editor'].includes(role))throw Error('Administrator or editor access is required to change villa records.');return directory.save(villa,original);},
     role:()=>role, canEdit:()=>!!session && ['admin','editor'].includes(role), load, save,
     setPublicKey(value) { if (!publicKey(value.trim())) throw Error('Use a public publishable or anon key, never a secret or service-role key.');localStorage.setItem('fernsvilla-public-key',value.trim()); },

@@ -39,7 +39,7 @@ window.FernsCloud = (() => {
     if(session.recovery)throw Error('Finish resetting your password before accessing association data.');
     const members = await request('/rest/v1/fernsvilla_members?select=role&user_id=eq.'+encodeURIComponent(session.user.id));
     role = members?.[0]?.role;
-    if (!role) throw Error('Your account has not been added to the association. Ask the administrator to grant membership.');
+    if (!role) throw Error('Your account is awaiting association approval. Ask an administrator to grant membership.');
     const rows = await request('/rest/v1/fernsvilla_state?select=data,revision&id=eq.1');
     if (!rows?.length) throw Error('Association database is not initialized. Run the supplied Supabase migration.');
     if (!validate(rows[0].data)) throw Error('Association data has an invalid format. Contact the administrator.');
@@ -77,6 +77,13 @@ window.FernsCloud = (() => {
     saveVilla:async(villa,original)=>{if(!session||!['admin','editor'].includes(role))throw Error('Administrator or editor access is required to change villa records.');return directory.save(villa,original);},
     role:()=>role, canEdit:()=>!!session && ['admin','editor'].includes(role), load, save,
     setPublicKey(value) { if (!publicKey(value.trim())) throw Error('Use a public publishable or anon key, never a secret or service-role key.');localStorage.setItem('fernsvilla-public-key',value.trim()); },
+    async signUp(fullName,email,password){
+      if(!fullName?.trim()||!email?.trim()||typeof password!=='string'||password.length<8)throw Error('Enter your name, email and a password with at least 8 characters.');
+      await request('/auth/v1/signup?redirect_to='+encodeURIComponent(config.signupRedirect),{method:'POST',auth:false,body:{email:email.trim(),password,data:{full_name:fullName.trim(),fernsvilla_signup:'true'}}});
+    },
+    async registrations(){if(!session||role!=='admin')throw Error('Administrator access required.');return request('/rest/v1/fernsvilla_registrations?select=*&status=eq.Pending&order=requested_at.asc');},
+    async approveRegistration(userId){if(!session||role!=='admin')throw Error('Administrator access required.');return request('/rest/v1/rpc/fernsvilla_approve_registration',{method:'POST',body:{registration_user:userId}});},
+    async addPost(data){if(!session||!['resident','editor','admin'].includes(role))throw Error('Approved association membership required.');await request('/rest/v1/rpc/fernsvilla_add_post',{method:'POST',body:{post_title:data.title,post_category:data.category,post_body:data.body}});return load();},
     hasRecovery:()=>!!session?.recovery,
     clearRecovery(){if(session?.recovery){storeSession(null);role=null;revision=null;}},
     async sendPasswordReset(email){

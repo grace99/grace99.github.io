@@ -95,3 +95,5 @@ Overview uses a full-width Jan–Dec chart with collection rate beside its title
 The Total villas report includes the assessment note “Monthly dues assessed at ₹1 per sq ft effective Jan 2026, as approved on 11 January 2026 GB meeting”, labels area as Total area sq ft, and shows small informational icons for zero maintenance (Under construction) and vacant accounts. Residence-status filtering is removed from this report. Policies keep fixed numbering and source order without sample labels or sorting controls; Association team also retains source order with no sorting controls.
 
 Villa status icons use larger glossy red styling and immediate hover/focus tooltips. The amber assessment note emphasizes the rate/effective date and uses a slow pulse, disabled when the device requests reduced motion.
+
+Overview Payments received reports omit Payment ID and Payment method columns, and both monthly finance reports use Year/month selection without date ranges. Overview Outstanding dues reports also omit the Due type column.

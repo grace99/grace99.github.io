@@ -1,7 +1,7 @@
 /* Read-only administrator feed. Capture and access rules live in migration 014. */
 window.FernsAdmin=(()=>{
  let events=[],loaded=false,busy=false,error='',hasMore=false,owner=null,tab='All';
- const entityLabels={VillaPmt:'Payments',villaDues:'Dues',villaMaster:'Villa directory',villaPaymentAllocations:'Payment allocations',villaBalances:'Villa balances',fernsvilla_state:'Association content',fernsvilla_members:'Membership'};
+ const entityLabels={VillaPmt:'Payments',villaDues:'Dues',villaMaster:'Villa directory',villaPaymentAllocations:'Payment allocations',villaBalances:'Villa balances',fernsvilla_state:'Association content',fernsvilla_members:'Membership',fernsvilla_registrations:'Registrations'};
  const actionLabels={INSERT:'Created',UPDATE:'Modified',DELETE:'Deleted',TRUNCATE:'Table cleared',SIGN_IN:'Signed in',MONTHLY_LOAD:'Monthly dues load',SNAPSHOT:'Snapshot'};
  const allowed=()=>cloudReady&&cloud.hasSession()&&cloud.role()==='admin';
  function clear(){document.querySelector('[data-admin-event]')?.closest('.modal-backdrop')?.remove();events=[];loaded=false;busy=false;error='';hasMore=false;owner=null;tab='All';FernsGrid.states.delete('admin-feed');}
@@ -20,7 +20,7 @@ window.FernsAdmin=(()=>{
   if(!allowed())return heading('Admin center','')+'<div class="card empty">Sign in with administrator access to view the activity feed.</div>';
   const source=rows(),visible=FernsGrid.rows('admin-feed',source,config);
   const columns=[['occurred_at','Time'],['actor','User / database role'],['action','Action'],['entityLabel','Area'],['villa','Villa'],['summary','Record / summary'],['source','Source'],['transaction_id','Transaction ID']];
-  return heading('Admin center','',`<button type="button" class="btn" data-admin-refresh ${busy?'disabled':''} title="Reload the newest audit events">${icon('chart',15)} Refresh feed</button>`)+
+  return heading('Admin center','',`<button type="button" class="btn" data-admin-refresh ${busy?'disabled':''} title="Reload the newest audit events">${icon('chart',15)} Refresh feed</button>`)+(window.FernsSignup?.panel()||'')+
    `<div class="actions admin-tabs">${['All','Sign-ins','Activities','Database changes'].map(t=>`<button type="button" class="btn ${tab===t?'primary':''}" data-admin-tab="${t}" aria-pressed="${tab===t}">${t}</button>`).join('')}</div>`+
    '<p class="admin-note">Filters apply to loaded events. Load older events for more history. Times use your local timezone.</p>'+FernsGrid.panel('admin-feed',source,config)+
    (error?`<div class="card admin-error" role="alert"><p>${esc(error)}</p><p>If audit capture is not installed, run <a href="supabase/014_admin_center.sql" target="_blank" rel="noopener">migration 014</a> after 013, then refresh the feed.</p></div>`:'')+

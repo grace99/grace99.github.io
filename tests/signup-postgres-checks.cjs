@@ -1,0 +1,21 @@
+module.exports=async(db)=>{
+ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+ await db.exec(`RESET ROLE;ALTER TABLE auth.users ADD COLUMN IF NOT EXISTS raw_user_meta_data jsonb DEFAULT '{}';ALTER TABLE auth.users ADD COLUMN IF NOT EXISTS email_confirmed_at timestamptz;ALTER TABLE public.fernsvilla_state ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();INSERT INTO public.fernsvilla_state(id,data,revision) VALUES (1,'{"villas":[],"issues":[],"team":[],"resources":[],"posts":[],"payments":[]}',0) ON CONFLICT(id) DO UPDATE SET data=EXCLUDED.data;
+`);
+ await db.exec(fs.readFileSync(path.join(__dirname,'../supabase/001_association.sql'),'utf8'));
+ const sql=fs.readFileSync(path.join(__dirname,'../supabase/016_signup_resident_access.sql'),'utf8');await db.exec(sql);await db.exec(sql);
+ const id='44444444-4444-4444-4444-444444444444';
+ await db.query(`INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES ($1,'signup@example.test','{"full_name":"New Resident","fernsvilla_signup":"true","role":"admin"}')`,[id]);
+ assert.equal((await db.query(`SELECT role FROM public.fernsvilla_members WHERE user_id=$1`,[id])).rows.length,0);
+ await db.exec(`SET ROLE authenticated;SET test.uid='22222222-2222-2222-2222-222222222222';`);await assert.rejects(db.query(`SELECT public.fernsvilla_approve_registration($1)`,[id]),/Administrator access/);assert.equal((await db.query('SELECT * FROM public.fernsvilla_registrations')).rows.length,0);
+ await db.exec(`SET test.uid='11111111-1111-1111-1111-111111111111';`);await assert.rejects(db.query(`SELECT public.fernsvilla_approve_registration($1)`,[id]),/confirm their email/);
+ await db.exec(`RESET ROLE;`);await db.query(`UPDATE auth.users SET email_confirmed_at=now() WHERE id=$1`,[id]);await db.exec(`SET ROLE authenticated;`);let approved=(await db.query(`SELECT public.fernsvilla_approve_registration($1) AS result`,[id])).rows[0].result;assert.equal(approved.role,'resident');approved=(await db.query(`SELECT public.fernsvilla_approve_registration($1) AS result`,[id])).rows[0].result;assert.equal(approved.role,'resident');
+ await db.exec(`SET test.uid='${id}';`);await assert.rejects(db.query(`UPDATE public.fernsvilla_registrations SET status='Approved'`),/permission denied/);await assert.rejects(db.query(`SELECT public.fernsvilla_save(0,'{}')`),/Administrator or editor/);
+ await assert.rejects(db.query(`SELECT public.fernsvilla_load_monthly_dues('2027-03-01')`),/access required/);await assert.rejects(db.query(`INSERT INTO public."VillaPmt"("Villa","PmtAmt","PmtDate") VALUES ('50',100,'2027-03-01')`),/row-level security/);
+ const before=(await db.query(`SELECT data FROM public.fernsvilla_state WHERE id=1`)).rows[0].data;
+ const post=(await db.query(`SELECT public.fernsvilla_add_post('Hello','Community','First resident post') AS result`)).rows[0].result;assert.equal(post.author,'New Resident');assert.equal(post.created_by,id);
+ const after=(await db.query(`SELECT data FROM public.fernsvilla_state WHERE id=1`)).rows[0].data;assert.deepEqual(after.team,before.team);assert.deepEqual(after.payments,before.payments);assert.equal(after.posts.length,1);await db.exec(`SET test.uid='11111111-1111-1111-1111-111111111111';`);await assert.rejects(db.query(`SELECT public.fernsvilla_save(0,$1)`,[JSON.stringify(before)]),/Another member updated/);await db.exec(`SET test.uid='${id}';`);
+ await assert.rejects(db.query(`SELECT public.fernsvilla_add_post('','Community','bad')`),/valid title/);
+ await db.exec(`RESET ROLE;UPDATE public.fernsvilla_members SET role='editor' WHERE user_id='${id}';SET ROLE authenticated;SET test.uid='11111111-1111-1111-1111-111111111111';`);assert.equal((await db.query(`SELECT public.fernsvilla_approve_registration($1) AS result`,[id])).rows[0].result.role,'editor');
+ console.log('PASS signup/access: pending signup without role escalation, verified-email/admin-only approval, retry preserves roles, resident append-only blog publication with server identity, no association-state writes');
+};

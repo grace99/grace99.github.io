@@ -128,3 +128,6 @@ td{padding:7px 12px;line-height:1.35}
 
 .trend-amount-tooltip{position:fixed;z-index:45;pointer-events:none;max-width:calc(100vw - 24px);padding:10px 14px;border-radius:8px;background:#193d35;color:#fff;border:1px solid #507565;box-shadow:0 5px 18px #122c352b;font-size:14px;line-height:1.65;white-space:pre-line;font-variant-numeric:tabular-nums}
 .registration-area{margin-bottom:12px}.registration-card{margin-top:10px}.registration-card .finance-error{padding:0 14px 12px}
+.main[data-view="Overview"] .stat-icon{padding:10px}.overview-trend{min-width:0;margin-bottom:22px}.overview-trend .chart{overflow-x:auto;padding-top:15px}.overview-trend .chart svg{min-width:840px;height:230px}.trend-title{display:flex;align-items:center;gap:18px;flex-wrap:wrap}.collection-rate{font-family:Manrope,system-ui,sans-serif;font-size:23px;font-weight:750;color:var(--green)}.collection-rate small{font-family:'DM Sans',system-ui,sans-serif;font-size:13px;font-weight:500;color:var(--muted)}.overview-community{grid-template-columns:repeat(3,minmax(0,1fr))}.overview-community .issue{flex-wrap:wrap}.overview-community .issue .badge{margin-left:0}@media(max-width:1000px){.overview-community{grid-template-columns:1fr}.overview-trend .chart svg{height:200px}}
+
+.main[data-view="Overview"] .issue-icon{height:40px}.main[data-view="Overview"] .issue-icon svg{width:20px;height:20px}

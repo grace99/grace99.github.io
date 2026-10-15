@@ -18,11 +18,11 @@ function openStatDrill(key){
   source=db.villas.map(v=>({...v,account:v.id,maintenance:v.due??0,outstanding:villaOutstanding(v.id)}));
  }
  if(drill.overview&&drill.kind==='payments'){
-  spec.columns=FINANCE_PAYMENT_COLUMNS.filter(c=>!['PmtRemarks','LatePmt','UTR','AllocationMonth','SplitFromPmtId','IsSplitParent'].includes(c));
-  spec.config={...spec.config,fields:spec.config.fields.filter(f=>['Villa','PaymentStatus'].includes(f.key))};source=activePayments();
+  spec.columns=FINANCE_PAYMENT_COLUMNS.filter(c=>!['id','PmtMthd','PmtRemarks','LatePmt','UTR','AllocationMonth','SplitFromPmtId','IsSplitParent'].includes(c));
+  spec.config={...spec.config,hideDateRange:true,fields:spec.config.fields.filter(f=>['Villa','PaymentStatus'].includes(f.key))};source=activePayments();
  }
  if(drill.overview&&drill.kind==='dues'){
-  spec.columns=['villa','dueTyp','dueDesc','dueAmt','dueDate','paidAmt','dueStatus','outstandingAmt'];spec.labels={...FINANCE_LABELS,outstandingAmt:'Outstanding due'};
+  spec.columns=['villa','dueDesc','dueAmt','dueDate','paidAmt','dueStatus','outstandingAmt'];spec.labels={...FINANCE_LABELS,outstandingAmt:'Outstanding due'};
   spec.config={...spec.config,hideDateRange:true};source=db.dues.filter(d=>dueOutstanding(d)>0).map(d=>({...d,paidAmt:duePaid(d),outstandingAmt:dueOutstanding(d)}));
  }
  if(monthly){const period=FernsOverview.reportingMonth(),state=FernsGrid.state(gridKey,spec.config);state.year=period.key.slice(0,4);state.months=[period.key.slice(5,7)];state.singleMonth=true;}

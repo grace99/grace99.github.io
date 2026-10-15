@@ -114,3 +114,5 @@
 :root[data-theme=dark] .badge.partial{background:#253e5b;color:#b3d2f8;border-color:#3c5c80}
 
 :root[data-theme=dark] .trend-amount-tooltip{background:#213c4b;color:#e2edf4;border-color:#527483}
+
+:root[data-theme=dark] .villa-assessment-note{color:#ffc46b}:root[data-theme=dark] .villa-hint{color:#ff6672;background:linear-gradient(145deg,#522e3b,#392a33);border-color:#c35164;box-shadow:inset 0 1px 0 #ffffff22,0 0 7px #ff415536}

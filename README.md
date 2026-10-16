@@ -99,3 +99,5 @@ Villa status icons use larger glossy red styling and immediate hover/focus toolt
 Overview Payments received reports omit Payment ID and Payment method columns, and both monthly finance reports use Year/month selection without date ranges. Overview Outstanding dues reports also omit the Due type column.
 
 Community issues now use the dedicated `community_issues` table rather than the shared JSON state. Apply the complete `supabase/017_community_issues.sql` before deploying this app version. It supports the table already created manually, imports legacy issues once without deleting the JSON source, and enables audit capture. Admins/editors can report and edit issues, including category, severity, recurrence, location, reporting details, target resolution, status, and resolution. Residents retain read-only Overview access.
+
+The Issues & maintenance page now has separate Issues and Preventive maintenance views with independent filters/counts and a Record type form field. Apply `supabase/018_issue_record_type.sql` after 017 before deploying. Existing records default to Issue; administrators/editors can change their classification.

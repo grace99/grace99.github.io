@@ -144,3 +144,5 @@ td{padding:7px 12px;line-height:1.35}
 .issue-serial{font-weight:700;color:var(--ink)}
 .issue-count{margin:10px 0 14px;color:var(--muted)}
 .issue-record p{max-width:none;line-height:1.6}
+
+.issue-views{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}.issue-views .btn{gap:6px}.issue-views .btn span{font-variant-numeric:tabular-nums;opacity:.85}

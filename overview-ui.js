@@ -3,7 +3,7 @@ function renderOverviewStats(monthly){
  const status=p=>String(p.resStatus||p.type||'').trim().toLowerCase();
  const construction=plots.filter(p=>status(p)==='under construction').length;
  const paid=records.payments.reduce((sum,p)=>sum+financialCents(p.PmtAmt),0)/100,outstanding=records.dues.reduce((sum,d)=>sum+financialCents(dueOutstanding(d)),0)/100;
- const issues=db.issues.filter(i=>!issueIsClosed(i));
+ const issues=db.issues.filter(i=>issueIsIncident(i)&&!issueIsClosed(i));
  return `<div class="stats">${stat('Total villas',plots.length,`${construction} under construction`,'home',{kind:'plots',rows:plots,overview:monthly})}${stat('Payments received',money(paid),monthly?`${period.label} · receipt date`:'All receipt dates','wallet',{kind:'payments',rows:records.payments,overview:monthly,period:monthly?period.label:null})}${stat('Outstanding dues',money(outstanding),`${monthly?period.label+' · ':''}${new Set(records.dues.map(d=>d.villa)).size} villa accounts with unpaid dues`,'chart',{kind:'dues',rows:records.dues,overview:monthly,period:monthly?period.label:null})}${stat('Open issues',issues.length,`${issues.filter(i=>i.status==='In progress').length} in progress`,'tool',{kind:'issues',rows:issues})}</div>`;
 }
 function openStatDrill(key){

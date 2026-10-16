@@ -9,7 +9,7 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict');
   else if(u.pathname.includes('fernsvilla_members'))data=[{role}];
   else if(u.pathname.includes('fernsvilla_state'))data=[{revision:0,data:{villas:[],issues:[],team:[],resources:[],posts:[],payments:[]}}];
   else if(u.pathname.endsWith('fernsvilla_audit_events')){feedCalls++;assert.equal(role,'admin');if(fail){await route.fulfill({status:404,contentType:'application/json',body:JSON.stringify({message:'Audit table is not installed',code:'PGRST205'})});return;}assert.equal(u.searchParams.get('order'),'occurred_at.desc,id.desc');const cursor=u.searchParams.get('or'),before=cursor?Number(cursor.match(/id.lt.(\d+)/)[1]):Infinity;data=events.filter(e=>e.id<before).slice(0,101);}
-  else if(['villaMaster','VillaPmt','villaDues','villaPaymentAllocations'].some(t=>u.pathname.endsWith(t)))data=[];
+  else if(['community_issues','villaMaster','VillaPmt','villaDues','villaPaymentAllocations'].some(t=>u.pathname.endsWith(t)))data=[];
   else throw Error(u.pathname);
   await route.fulfill({contentType:'application/json',body:JSON.stringify(data)});
  });

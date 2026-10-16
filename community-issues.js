@@ -1,0 +1,38 @@
+/* Dedicated community issue storage and management. */
+(function(root){
+ const fields={id:'issue_id',title:'issue_title',detail:'issue_description',category:'issue_category',severity:'issue_severity',recurring:'recurring_issue',villa:'villa',location:'issue_location',reporter:'reported_by_name',reportedBy:'reported_by',reportedOn:'reported_on',assignedTo:'assigned_to',targetDate:'target_resolution_date',status:'issue_status',resolution:'resolution_description',resolvedOn:'resolution_date',resolvedBy:'resolved_by',updatedAt:'updated_at'};
+ root.createCommunityIssues=(request,canEdit)=>({
+  async list(){const all=[];for(let offset=0;;offset+=500){const rows=await request('/rest/v1/community_issues?select=*&order=reported_on.desc,issue_id.desc&limit=500&offset='+offset);if(!Array.isArray(rows))throw Error('Community issues returned an invalid response.');all.push(...rows.map(row=>Object.fromEntries(Object.entries(fields).map(([key,column])=>[key,row[column]]))));if(rows.length<500)return all;}},
+  async save(data,original){
+   if(!canEdit())throw Error('Administrator or editor access is required to manage issues.');
+   const body={};for(const key of ['title','detail','category','severity','recurring','villa','location','reporter','reportedOn','assignedTo','targetDate','status','resolution','resolvedOn'])if(data[key]!==undefined)body[fields[key]]=data[key]===''?null:data[key];
+   let path='/rest/v1/community_issues';
+   if(original){const q=new URLSearchParams({issue_id:'eq.'+original.id,updated_at:'eq.'+original.updatedAt});path+='?'+q;}
+   const rows=await request(path,{method:original?'PATCH':'POST',body,prefer:'return=representation'});
+   if(!rows?.length)throw Error('The issue was not saved. It may have changed or your account may lack access. Refresh and retry.');
+   return Object.fromEntries(Object.entries(fields).map(([key,column])=>[key,rows[0][column]]));
+  }
+ });
+})(window);
+function issueIsClosed(issue){return ['Resolved','Closed','Cancelled'].includes(issue.status)}
+function renderCommunityIssues(){
+ const config={title:'Issues',sort:'reportedOn',direction:'desc',date:'reportedOn',types:{id:'number',villa:'villa',reportedOn:'date'},fields:[{key:'category',label:'Category'},{key:'severity',label:'Severity'},{key:'status',label:'Status'},{key:'villa',label:'Villa account'}],sortOptions:[{key:'reportedOn',label:'Reported on'},{key:'title',label:'Issue title'},{key:'villa',label:'Villa account'},{key:'status',label:'Status'}]};
+ return heading('Issues & maintenance','',canManage()?button('Report an issue','issue',true):'')+FernsGrid.panel('issues',db.issues,config)+`<div class="list-grid">${FernsGrid.rows('issues',db.issues,config).map(i=>`<article class="card resource"><span class="badge ${issueIsClosed(i)?'green':'amber'}">${esc(i.status)}</span> <span class="badge ${['Critical','High'].includes(i.severity)?'amber':'gray'}">${esc(i.severity||'Medium')}</span><h3>#${esc(i.id)} · ${esc(i.title)}</h3><p style="white-space:pre-wrap">${esc(i.detail)}</p><p>${esc(i.category)} · ${esc(i.villa||i.location||'Common area')}${i.recurring?' · Recurring':''}</p><p>Reported by ${esc(i.reporter||'Association')} · ${esc(i.reportedOn?new Date(i.reportedOn).toLocaleString():'Not recorded')}</p>${i.targetDate?`<p>Target resolution: ${esc(i.targetDate)}</p>`:''}${i.resolution?`<p style="white-space:pre-wrap">Resolution: ${esc(i.resolution)}</p><p>${esc(i.resolvedOn?new Date(i.resolvedOn).toLocaleString():'')}</p>`:''}${canManage()?`<button class="icon-btn" data-action="edit-issue" data-id="${esc(i.id)}" title="Edit issue / update status" aria-label="Edit issue ${esc(i.id)}">${icon('edit',18)}</button>`:''}</article>`).join('')||'<div class="empty">No issues match these filters.</div>'}</div>`;
+}
+function openCommunityIssue(id){
+ const original=id===undefined?null:db.issues.find(i=>String(i.id)===String(id));if(id!==undefined&&!original)return;
+ const i=original||{status:'Open',severity:'Medium',category:'Maintenance',reportedOn:new Date().toISOString(),reporter:cloud.user?.()?.user_metadata?.full_name||cloud.user?.()?.email||''};
+ const text=(label,key,value='',required=false)=>`<label for="issue-${key}">${label}</label><textarea id="issue-${key}" name="${key}" ${required?'required':''}>${esc(value||'')}</textarea>`;
+ const localDate=value=>{if(!value)return '';const d=new Date(value);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16)};
+ const body=field('Issue title','title',i.title||'')+text('Issue description','detail',i.detail,true)+select('Category','category',['Maintenance','Security','Water','Electrical','Roads & drainage','Waste management','Landscaping','Common facilities','Other'],i.category)+select('Severity','severity',['Low','Medium','High','Critical'],i.severity)+select('Recurring issue','recurring',['No','Yes'],i.recurring?'Yes':'No')+select('Villa account (optional)','villa',['',...db.villas.map(v=>v.id)],i.villa||'')+field('Location','location',i.location||'','text',false)+field('Reported by (name)','reporter',i.reporter||'','text',false)+field('Reported on','reportedOn',localDate(i.reportedOn||new Date().toISOString()),'datetime-local')+field('Target resolution date','targetDate',i.targetDate||'','date',false)+select('Status','status',['Open','Acknowledged','In progress','On hold','Resolved','Closed','Cancelled'],i.status)+text('Resolution description','resolution',i.resolution)+field('Resolution date','resolvedOn',localDate(i.resolvedOn),'datetime-local',false);
+ document.querySelector('#modal-root').innerHTML=`<div class="modal-backdrop"><form class="modal" id="issue-editor" role="dialog" aria-modal="true" aria-label="${original?'Edit issue':'Report an issue'}"><header><h2>${original?'Edit issue #'+esc(i.id):'Report an issue'}</h2><button class="icon-btn" type="button" data-action="close" aria-label="Close dialog">${icon('close')}</button></header>${body}<div class="actions"><button type="button" class="btn" data-action="close">Cancel</button><button type="submit" class="btn primary">Save issue</button></div></form></div>`;
+ const form=document.querySelector('#issue-editor');form.elements.title.focus();
+ const sync=()=>{const resolved=['Resolved','Closed'].includes(form.elements.status.value);form.elements.resolution.required=resolved;form.elements.resolvedOn.required=resolved;if(resolved&&!form.elements.resolvedOn.value)form.elements.resolvedOn.value=localDate(new Date().toISOString());};form.elements.status.addEventListener('change',sync);sync();
+ form.onsubmit=async e=>{e.preventDefault();if(cloudBusy||!allowEdit())return;const data=Object.fromEntries(new FormData(form));data.recurring=data.recurring==='Yes';data.reportedOn=new Date(data.reportedOn).toISOString();data.resolvedOn=data.resolvedOn?new Date(data.resolvedOn).toISOString():null;
+ if(['Resolved','Closed'].includes(data.status)&&(!data.resolution.trim()||!data.resolvedOn)){toast('Enter a resolution description and date.');return;}
+ if(data.resolvedOn&&data.resolvedOn<data.reportedOn){toast('Resolution date cannot be before the reported date.');return;}
+
+ cloudBusy=true;form.querySelector('[type=submit]').disabled=true;
+ try{const saved=cloud.configured?await cloud.issues.save(data,original):{...data,id:original?.id||Date.now()};if(original)db.issues[db.issues.indexOf(original)]=saved;else db.issues.unshift(saved);if(!cloud.configured)await save();closeModal(true);render();toast('Issue saved.');}catch(error){toast(error.message);form.querySelector('[type=submit]').disabled=false;}finally{cloudBusy=false;}
+ };
+}

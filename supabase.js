@@ -2,9 +2,10 @@
 window.FernsCloud = (() => {
   const config = window.FERNSVILLA_SUPABASE;
   const key = config.publishableKey || localStorage.getItem('fernsvilla-public-key') || '';
-  let session = null, role = null, revision = null, refreshing = null, ledgerVillas = [], legacyPayments = [];
+  let session = null, role = null, revision = null, refreshing = null, ledgerVillas = [], legacyPayments = [], legacyIssues = [];
   const directory = window.createVillaDirectory(request, config.villaMaster);
   const finance=window.createAssociationLedger(request,()=>!!session&&['admin','editor'].includes(role));
+  const issueDirectory = window.createCommunityIssues(request,()=>!!session&&['admin','editor'].includes(role));
   const sessionKey = 'fernsvilla-supabase-session';
   try { session = JSON.parse(localStorage.getItem(sessionKey)); } catch {}
   function storeSession(value) { session = value; if (value) localStorage.setItem(sessionKey, JSON.stringify(value)); else localStorage.removeItem(sessionKey); }
@@ -48,7 +49,9 @@ window.FernsCloud = (() => {
     const financial=await finance.list();
     ledgerVillas = rows[0].data.villas;
     legacyPayments = rows[0].data.payments;
-    return {...rows[0].data,...financial, villas: masterVillas.map(villa => {
+    legacyIssues = rows[0].data.issues;
+    const issues = await issueDirectory.list();
+    return {...rows[0].data,...financial, issues, villas: masterVillas.map(villa => {
       const balance = ledgerVillas.find(item => item.id === villa.id);
       return {...villa, due: villa.due ?? balance?.due ?? 0, paid: Number(balance?.paid ?? 0)};
     })};
@@ -57,15 +60,15 @@ window.FernsCloud = (() => {
     if (!session || !['admin','editor'].includes(role)) throw Error('Administrator or editor access is required to change association records.');
     const balances = new Map(ledgerVillas.map(villa => [villa.id, {id:villa.id,due:villa.due,paid:villa.paid}]));
     for (const villa of data.villas) balances.set(villa.id,{id:villa.id,due:villa.due,paid:villa.paid});
-    const {dues,payments,allocations,...other}=data;
-    const stored = {...other,payments:legacyPayments,villas:[...balances.values()]};
+    const {dues,payments,allocations,issues,...other}=data;
+    const stored = {...other,issues:legacyIssues,payments:legacyPayments,villas:[...balances.values()]};
     const result = await request('/rest/v1/rpc/fernsvilla_save',{method:'POST',body:{expected_revision:revision,new_data:stored}});
     ledgerVillas = stored.villas;
     revision = result;
   }
   return {
     configured: publicKey(key), hasSession:()=>!!session, user:()=>session?.user,
-    finance,
+    finance, issues:issueDirectory,
     async adminFeed(cursor=null) {
       if(!session||role!=='admin')throw Error('Administrator access is required to view the activity feed.');
       const params=new URLSearchParams({select:'*',order:'occurred_at.desc,id.desc',limit:'101'});

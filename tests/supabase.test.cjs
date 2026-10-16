@@ -7,7 +7,7 @@ const empty={villas:[],issues:[],team:[],resources:[],posts:[],payments:[]};
 function setup(handler,stored={}){
  const storage=new Map(Object.entries(stored));const calls=[];
  const ctx={window:{FERNSVILLA_SUPABASE:{url:'https://example.supabase.co',signupRedirect:'https://grace99.github.io/?signup=confirmed',passwordResetRedirect:'https://grace99.github.io/?reset-password=1',publishableKey:'sb_publishable_test',villaMaster:{table:'villaMaster',columns:{key:'Villa',id:'Villa',name:'Name',type:'OwnORrent',phone:'PriPhoneNo',due:'MaintAmount'}}}},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},AbortController,setTimeout,clearTimeout,atob,URLSearchParams,fetch:async(url,options)=>{calls.push({url,...options});const result=await handler(url,options);return {ok:(result.status||200)<400,status:result.status||200,text:async()=>JSON.stringify(result.data)};}};
- vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../villa-directory.js'),'utf8'),ctx);vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../ledger-utils.js'),'utf8'),ctx);vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../dues-ledger.js'),'utf8'),ctx);vm.runInNewContext(source,ctx);return {cloud:ctx.window.FernsCloud,calls,storage};
+ vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../villa-directory.js'),'utf8'),ctx);vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../ledger-utils.js'),'utf8'),ctx);vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../dues-ledger.js'),'utf8'),ctx);vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../community-issues.js'),'utf8'),ctx);vm.runInNewContext(source,ctx);return {cloud:ctx.window.FernsCloud,calls,storage};
 }
 const login={access_token:'access-test',refresh_token:'refresh-test',expires_in:3600,user:{id:'user-uuid',email:'member@example.test'}};
 function handler(role='admin',saveResult=8){return (url,options)=>{
@@ -15,6 +15,7 @@ function handler(role='admin',saveResult=8){return (url,options)=>{
  if(url.includes('fernsvilla_members'))return {data:role?[{role}]:[]};
  if(url.includes('fernsvilla_state'))return {data:[{data:empty,revision:7}]};
  if(url.includes('/villaDues')||url.includes('/VillaPmt'))return {data:[]};
+ if(url.includes('/community_issues'))return {data:[]};
  if(url.includes('/villaMaster'))return {data:[]};
  if(url.includes('fernsvilla_save'))return {data:saveResult};
  if(url.includes('/auth/v1/logout'))return {data:{}};
@@ -47,6 +48,7 @@ test('villaMaster is authoritative and saves only balances into association docu
  const normal=handler();const {cloud,calls}=setup((url,options)=>{
  if(url.includes('fernsvilla_state'))return {data:[{revision:7,data:{...empty,villas:[{id:'FV-001',name:'Stale JSON name',due:100,paid:900}]}}]};
  if(url.includes('/villaDues')||url.includes('/VillaPmt'))return {data:[]};
+ if(url.includes('/community_issues'))return {data:[]};
  if(url.includes('/villaMaster'))return {data:[{Villa:'FV-001',Name:'Actual master name',OwnORrent:'Owner',PriPhoneNo:'12345',MaintAmount:'4500.00'}]};
  return normal(url,options);
  });
@@ -84,3 +86,12 @@ test('invalid recovery tokens never establish a session',async()=>{const {cloud}
 
 test('self signup sends a confirmation redirect and no chosen membership role',async()=>{const {cloud,calls}=setup(()=>({data:{user:{id:'pending'}}}));await cloud.signUp('New Resident',' new@example.test ','password123');const call=calls[0],body=JSON.parse(call.body);assert.equal(new URL(call.url).searchParams.get('redirect_to'),'https://grace99.github.io/?signup=confirmed');assert.equal(body.email,'new@example.test');assert.equal(body.data.fernsvilla_signup,'true');assert.equal(body.data.role,undefined);assert.equal(cloud.hasSession(),false);});
 test('resident blog publication uses the dedicated append RPC without shared-state saving',async()=>{const base=handler('resident');const {cloud,calls}=setup((url,options)=>url.includes('fernsvilla_add_post')?{data:{}}:base(url,options));await cloud.signIn('resident@example.test','password');await cloud.addPost({title:'Hello',category:'Community',body:'A story',author:'Forged author'});const call=calls.find(c=>c.url.includes('fernsvilla_add_post'));assert.deepEqual(JSON.parse(call.body),{post_title:'Hello',post_category:'Community',post_body:'A story'});assert.equal(calls.some(c=>c.url.includes('fernsvilla_save')),false);await assert.rejects(cloud.approveRegistration('other'),/Administrator/);await assert.rejects(cloud.registrations(),/Administrator/);});
+test('dedicated issues override JSON on load and unrelated saves preserve legacy JSON',async()=>{
+ const legacy=[{id:1,title:'Legacy gate'}],base=handler();
+ const {cloud,calls}=setup((url,options)=>{
+  if(url.includes('fernsvilla_state'))return {data:[{data:{...empty,issues:legacy},revision:7}]};
+  if(url.includes('/community_issues'))return {data:[{issue_id:99,issue_title:'Dedicated gate',issue_status:'Open'}]};
+  return base(url,options);
+ });
+ const data=await cloud.signIn('member@example.test','password');assert.equal(data.issues[0].id,99);await cloud.save(data);assert.deepEqual(JSON.parse(calls.at(-1).body).new_data.issues,legacy);
+});

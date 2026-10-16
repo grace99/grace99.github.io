@@ -97,3 +97,5 @@ The Total villas report includes the assessment note “Monthly dues assessed at
 Villa status icons use larger glossy red styling and immediate hover/focus tooltips. The amber assessment note emphasizes the rate/effective date and uses a slow pulse, disabled when the device requests reduced motion.
 
 Overview Payments received reports omit Payment ID and Payment method columns, and both monthly finance reports use Year/month selection without date ranges. Overview Outstanding dues reports also omit the Due type column.
+
+Community issues now use the dedicated `community_issues` table rather than the shared JSON state. Apply the complete `supabase/017_community_issues.sql` before deploying this app version. It supports the table already created manually, imports legacy issues once without deleting the JSON source, and enables audit capture. Admins/editors can report and edit issues, including category, severity, recurrence, location, reporting details, target resolution, status, and resolution. Residents retain read-only Overview access.

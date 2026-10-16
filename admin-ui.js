@@ -1,7 +1,7 @@
 /* Read-only administrator feed. Capture and access rules live in migration 014. */
 window.FernsAdmin=(()=>{
  let events=[],loaded=false,busy=false,error='',hasMore=false,owner=null,tab='All';
- const entityLabels={VillaPmt:'Payments',villaDues:'Dues',villaMaster:'Villa directory',villaPaymentAllocations:'Payment allocations',villaBalances:'Villa balances',fernsvilla_state:'Association content',fernsvilla_members:'Membership',fernsvilla_registrations:'Registrations'};
+ const entityLabels={community_issues:'Community issues',VillaPmt:'Payments',villaDues:'Dues',villaMaster:'Villa directory',villaPaymentAllocations:'Payment allocations',villaBalances:'Villa balances',fernsvilla_state:'Association content',fernsvilla_members:'Membership',fernsvilla_registrations:'Registrations'};
  const actionLabels={INSERT:'Created',UPDATE:'Modified',DELETE:'Deleted',TRUNCATE:'Table cleared',SIGN_IN:'Signed in',MONTHLY_LOAD:'Monthly dues load',SNAPSHOT:'Snapshot'};
  const allowed=()=>cloudReady&&cloud.hasSession()&&cloud.role()==='admin';
  function clear(){document.querySelector('[data-admin-event]')?.closest('.modal-backdrop')?.remove();events=[];loaded=false;busy=false;error='';hasMore=false;owner=null;tab='All';FernsGrid.states.delete('admin-feed');}

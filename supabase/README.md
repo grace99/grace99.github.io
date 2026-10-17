@@ -208,3 +208,9 @@ Members can read issues; admins/editors can write. The UI requires resolution de
 ## 018 — Issues and preventive maintenance views
 
 Run the complete [018_issue_record_type.sql](018_issue_record_type.sql) after 017, before deploying the two-view UI. Adds `community_issues.record_type`, defaulting existing and future records to `Issue`, with allowed values `Issue` and `Preventive maintenance`. Existing category, severity, recurrence, resolution, permissions, and audit capture remain in use. Reruns preserve classifications. The form lets admins/editors reclassify records; views maintain independent filters and per-view totals. Overview Open issues and its community issues list include only Issue records. This adds classification, not automatic scheduling or recurring task generation.
+
+## 019 — Villa bank account reference reads
+
+After creating the supplied `public.villa_account_reference` table, run [019_villa_account_reference_access.sql](019_villa_account_reference_access.sql) before merging the modal feature. This enables RLS, grants authenticated SELECT, and adds an admin/editor read policy plus a restrictive read boundary for authenticated/anonymous roles. It revokes public/anonymous table SELECT. Existing reference data and DML grants/policies are retained; no INSERT, UPDATE, DELETE or sequence grants are added. Existing restrictive policies may still deny reads and should be reviewed if managers receive no rows despite populated data.
+
+Analytics exposes a click-open Villa bank accounts modal beside All accounts. Requests use the signed-in user's token, require an admin/editor membership, paginate at 500 rows ordered by primary key, and keep bank records outside shared JSON and persistent view state. UI failures are isolated to the modal. Cached records are cleared on sign-out/role or account changes, and stale requests cannot repopulate another user's view.

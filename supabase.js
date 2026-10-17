@@ -69,6 +69,16 @@ window.FernsCloud = (() => {
   return {
     configured: publicKey(key), hasSession:()=>!!session, user:()=>session?.user,
     finance, issues:issueDirectory,
+    async bankAccounts() {
+      if(!session||!['admin','editor'].includes(role))throw Error('Administrator or editor access is required to view villa bank accounts.');
+      const records=[];
+      for(let offset=0;;offset+=500){
+        const params=new URLSearchParams({select:'*',order:'id.asc',limit:'500',offset:String(offset)});
+        const rows=await request('/rest/v1/villa_account_reference?'+params);
+        if(!Array.isArray(rows))throw Error('Villa bank accounts returned an invalid response.');
+        records.push(...rows);if(rows.length<500)return records;
+      }
+    },
     async adminFeed(cursor=null) {
       if(!session||role!=='admin')throw Error('Administrator access is required to view the activity feed.');
       const params=new URLSearchParams({select:'*',order:'occurred_at.desc,id.desc',limit:'101'});

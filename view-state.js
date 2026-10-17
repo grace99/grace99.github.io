@@ -1,7 +1,7 @@
 /* Keep a tab's view across refresh, after membership and fresh data are loaded. */
 window.FernsViewState=(()=>{
  if('scrollRestoration' in history)history.scrollRestoration='manual';
- const key='ferns-tab-view-v1',ephemeral=new Set(['stat-drill','payment-matching','monthly-preview']);
+ const key='ferns-tab-view-v1',ephemeral=new Set(['stat-drill','payment-matching','monthly-preview','duplicate-review-receipts','duplicate-review-dues']);
  let pending=null,restoring=false,applied=false;
  try{const saved=JSON.parse(sessionStorage.getItem(key));if(saved&&saved.version===1&&typeof saved.page==='string'&&Array.isArray(saved.grids)&&Array.isArray(saved.scroll?.positions))pending=saved;}catch{}
  function clear(){pending=null;applied=false;FernsGrid.states.clear();duesView='items';communityIssueView='Issue';defaultersView='stacked';defaultersLineMetric='count';try{sessionStorage.removeItem(key)}catch{}}

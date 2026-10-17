@@ -102,4 +102,6 @@ Community issues now use the dedicated `community_issues` table rather than the 
 
 The Issues & maintenance page now has separate Issues and Preventive maintenance views with independent filters/counts and a Record type form field. Apply `supabase/018_issue_record_type.sql` after 017 before deploying. Existing records default to Issue; administrators/editors can change their classification.
 
-Payment-side matching shows all due types/statuses for the selected villa across the current month and previous 11 calendar months, newest due date first. Only outstanding items compatible with an allocated billing month can be selected. The modal offers freeform search, year/month buttons, and Reset. Apply and Split banners include purpose and expandable remarks; grid headers stay visible while their table bodies scroll.
+Payment-side matching shows all due types/statuses for the selected villa across the current month and previous 11 calendar months, newest due date first. Only outstanding items compatible with an allocated billing month can be selected. The modal offers freeform search, a year dropdown alongside month buttons, and Reset. Apply and Split banners show purpose and full remarks as plain values; grid headers stay visible while their table bodies scroll.
+
+Grid scrolling is preserved through checkbox redraws, filter changes, and page updates after payment actions. The payment-matching ribbon places the year dropdown and month buttons together without extra search-panel padding.

@@ -164,12 +164,18 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .payment-banner-context:empty{display:none}
 .payment-banner-context{margin-top:8px;padding-top:6px;border-top:1px solid var(--line);font-size:13px}
 .payment-banner-context p{font-size:13px;line-height:1.5;margin-top:3px}
-.payment-banner-context p>span,.payment-banner-remarks summary>span:first-child{color:var(--muted);font-size:12px;margin-right:6px}
-.payment-banner-remarks summary{display:flex;gap:5px;align-items:baseline;cursor:pointer;font-size:13px;padding:4px 0;list-style:none}
-.payment-banner-remarks summary:before{content:'▸';color:var(--muted)}
-.payment-banner-remarks[open] summary:before{content:'▾'}
-.payment-remarks-preview{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.payment-banner-remarks p{white-space:pre-wrap;max-height:100px;overflow:auto}
+.payment-banner-remarks{white-space:pre-wrap;overflow-wrap:anywhere}
 #payment-due-picker .bulk-preview{max-height:32vh}
 
-.payment-banner-context>p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.compact-period-filters{padding:8px 0!important;border:0;box-shadow:none;background:transparent!important}
+.compact-period-filters .grid-filter-fields{justify-content:flex-start;gap:8px}
+.compact-period-filters .grid-search{flex:0 1 300px;min-width:0}
+.compact-period-filters .grid-search>span{display:none}
+.compact-period-filters .grid-reset{margin:0}
+.compact-period-filters .grid-months{display:flex;flex-wrap:nowrap;align-items:center;overflow-x:auto;gap:6px;border-top:0;margin-top:6px;padding:0 0 4px}
+.compact-period-filters .grid-months>*{flex-shrink:0}
+.compact-period-filters .grid-year{flex:0 0 auto;min-width:0;display:flex;flex-direction:row;align-items:center;gap:6px}
+.compact-period-filters .grid-year select{width:110px;margin:0;padding:5px 8px;height:32px}
+.compact-period-filters .month-button{white-space:nowrap}
+
+.compact-period-filters .grid-field{margin:0}

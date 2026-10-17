@@ -95,3 +95,8 @@ test('dedicated issues override JSON on load and unrelated saves preserve legacy
  });
  const data=await cloud.signIn('member@example.test','password');assert.equal(data.issues[0].id,99);await cloud.save(data);assert.deepEqual(JSON.parse(calls.at(-1).body).new_data.issues,legacy);
 });
+test('bank reference reads are paginated, authenticated and read-only',async()=>{
+ const base=handler(),{cloud,calls}=setup((url,options)=>{if(url.includes('/villa_account_reference')){const query=new URL(url).searchParams;assert.equal(options.method,'GET');assert.equal(query.get('order'),'id.asc');return {data:query.get('offset')==='0'?Array.from({length:500},(_,id)=>({id,account_num:'00123'})):[{id:501,account_num:'00999'}]};}return base(url,options)});
+ await cloud.signIn('member@example.test','password');const rows=await cloud.bankAccounts();assert.equal(rows.length,501);assert.equal(rows[500].account_num,'00999');assert.equal(calls.filter(c=>c.url.includes('villa_account_reference')).length,2);
+});
+test('resident and signed-out sessions cannot request bank references',async()=>{const {cloud,calls}=setup(handler('resident'));await assert.rejects(cloud.bankAccounts(),/Administrator or editor/);await cloud.signIn('resident@example.test','password');await assert.rejects(cloud.bankAccounts(),/Administrator or editor/);assert.equal(calls.some(c=>c.url.includes('villa_account_reference')),false);});

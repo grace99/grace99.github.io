@@ -27,7 +27,7 @@ window.FernsGrid={
  return `<section class="card grid-filters ${config.compactPeriod?'compact-period-filters':''}" aria-label="${html(config.title||'Grid')} filters"><div class="grid-filter-fields">${fields}</div>${monthRow}${s.from&&s.to&&s.from>s.to?'<p class="grid-filter-error" role="alert">From date must be on or before To date.</p>':''}</section>`;}
 };
 /* Match containers by grid identity, so inserting another panel cannot transfer scroll. */
-function captureGridScroll(scope=document){
+function captureGridScroll(scope=document,snapshot=null){
  const selector='.table-wrap,.bulk-preview,.grid-months,.modal,.column-picker-panel,.sidebar,.overview-trend .chart';
  const entries=()=>{const counts=new Map();return [...(scope.matches?.(selector)?[scope]:[]),...scope.querySelectorAll(selector)].map(el=>{
   const kind=el.matches('.table-wrap')?'table':el.matches('.bulk-preview')?'preview':el.matches('.grid-months')?'months':el.matches('.modal')?'modal':el.matches('.column-picker-panel')?'columns':el.matches('.sidebar')?'sidebar':'chart';
@@ -35,9 +35,10 @@ function captureGridScroll(scope=document){
   const identity=[kind,el.id,modal?.getAttribute('aria-label'),picker?.dataset.financePicker,grid?.dataset.grid].join('|');
   const index=counts.get(identity)||0;counts.set(identity,index+1);return {el,key:identity+'|'+index};
  });};
- const positions=new Map(entries().map(({el,key})=>[key,{top:el.scrollTop,left:el.scrollLeft}]));
- const pagePosition=scope===document?{x:window.scrollX,y:window.scrollY}:null;
- return ()=>{for(const {el,key} of entries()){const position=positions.get(key);if(position){el.scrollTop=position.top;el.scrollLeft=position.left;}}if(pagePosition)window.scrollTo(pagePosition.x,pagePosition.y);};
+ const positions=new Map(snapshot?.positions||entries().map(({el,key})=>[key,{top:el.scrollTop,left:el.scrollLeft}]));
+ const pagePosition=snapshot?.pagePosition||(scope===document?{x:window.scrollX,y:window.scrollY}:null);
+ const restore=()=>{for(const {el,key} of entries()){const position=positions.get(key);if(position){el.scrollTop=position.top;el.scrollLeft=position.left;}}if(pagePosition)window.scrollTo(pagePosition.x,pagePosition.y);};
+ restore.snapshot={positions:[...positions],pagePosition};return restore;
 }
 function withGridScroll(action,scope=document){const restore=captureGridScroll(scope);try{return action();}finally{restore();}}
 function redrawGrid(key,input){const attribute=input?[...input.attributes].find(a=>a.name.startsWith('data-grid-')):null;const position=input?.matches('input[type=search]')?input.selectionStart:null;const restoreScroll=captureGridScroll();const callback=FernsGrid.callbacks.get(key);if(callback)callback();else render();if(attribute){const candidates=document.querySelectorAll(`[data-grid="${key}"][${attribute.name}]`);const field=[...candidates].find(e=>e.getAttribute(attribute.name)===attribute.value);field?.focus({preventScroll:true});if(position!==null)try{field?.setSelectionRange(position,position)}catch{}}restoreScroll();}

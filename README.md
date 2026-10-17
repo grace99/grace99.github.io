@@ -107,3 +107,5 @@ Payment-side matching shows all due types/statuses for the selected villa across
 Grid scrolling is preserved through checkbox redraws, filter changes, and page updates after payment actions. The payment-matching ribbon places the year dropdown and month buttons together without extra search-panel padding.
 
 Scroll preservation covers same-view redraws throughout the app: table bodies, modal containers, month ribbons, column-picker panels, sidebar, and card-page document position. Grid identities keep positions attached to their own views when panels are inserted. Monthly-preview updates and split-row edits also preserve modal position. When results shrink, scrolling clamps to the available content.
+
+Refreshing a tab restores its last authorized page, grid scroll positions, filters/sort and Dues/Issues subview after fresh association data loads. View state is scoped to the current tab and user in sessionStorage and cleared on sign-out; changed permissions are checked before restoring a page. Open dialogs and unsaved form inputs are not restored.

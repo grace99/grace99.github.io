@@ -105,3 +105,5 @@ The Issues & maintenance page now has separate Issues and Preventive maintenance
 Payment-side matching shows all due types/statuses for the selected villa across the current month and previous 11 calendar months, newest due date first. Only outstanding items compatible with an allocated billing month can be selected. The modal offers freeform search, a year dropdown alongside month buttons, and Reset. Apply and Split banners show purpose and full remarks as plain values; grid headers stay visible while their table bodies scroll.
 
 Grid scrolling is preserved through checkbox redraws, filter changes, and page updates after payment actions. The payment-matching ribbon places the year dropdown and month buttons together without extra search-panel padding.
+
+Scroll preservation covers same-view redraws throughout the app: table bodies, modal containers, month ribbons, column-picker panels, sidebar, and card-page document position. Grid identities keep positions attached to their own views when panels are inserted. Monthly-preview updates and split-row edits also preserve modal position. When results shrink, scrolling clamps to the available content.

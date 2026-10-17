@@ -4,7 +4,7 @@ window.FernsViewState=(()=>{
  const key='ferns-tab-view-v1',ephemeral=new Set(['stat-drill','payment-matching','monthly-preview']);
  let pending=null,restoring=false,applied=false;
  try{const saved=JSON.parse(sessionStorage.getItem(key));if(saved&&saved.version===1&&typeof saved.page==='string'&&Array.isArray(saved.grids)&&Array.isArray(saved.scroll?.positions))pending=saved;}catch{}
- function clear(){pending=null;applied=false;FernsGrid.states.clear();duesView='items';communityIssueView='Issue';try{sessionStorage.removeItem(key)}catch{}}
+ function clear(){pending=null;applied=false;FernsGrid.states.clear();duesView='items';communityIssueView='Issue';defaultersView='stacked';defaultersLineMetric='count';try{sessionStorage.removeItem(key)}catch{}}
  function beforeRender(){
   if(!pending||applied||(cloud.configured&&!cloudReady))return;
   if(pending.owner!==(cloud.user()?.id||'local')){clear();return;}
@@ -17,6 +17,8 @@ window.FernsViewState=(()=>{
    restored.columnsOpen=false;FernsGrid.states.set(id,restored);
   }
   if(['items','balances'].includes(pending.duesView))duesView=pending.duesView;
+  if(['stacked','line','heatmap','ageing'].includes(pending.defaultersView))defaultersView=pending.defaultersView;
+  if(['count','rate'].includes(pending.defaultersLineMetric))defaultersLineMetric=pending.defaultersLineMetric;
   if(['Issue','Preventive maintenance'].includes(pending.issueView))communityIssueView=pending.issueView;
  }
  function afterRender(){
@@ -33,7 +35,7 @@ window.FernsViewState=(()=>{
   try{const app=document.querySelector('#app'),snapshot=captureGridScroll(app).snapshot;
    // Dialogs and unsaved form contents are intentionally excluded.
    snapshot.pagePosition={x:window.scrollX,y:window.scrollY};
-   sessionStorage.setItem(key,JSON.stringify({version:1,owner:cloud.user()?.id||'local',page,grids:[...FernsGrid.states].filter(([id])=>!ephemeral.has(id)),scroll:snapshot,duesView,issueView:communityIssueView}));
+   sessionStorage.setItem(key,JSON.stringify({version:1,owner:cloud.user()?.id||'local',page,grids:[...FernsGrid.states].filter(([id])=>!ephemeral.has(id)),scroll:snapshot,duesView,issueView:communityIssueView,defaultersView,defaultersLineMetric}));
   }catch{}
  }
  window.addEventListener('pagehide',save);

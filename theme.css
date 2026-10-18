@@ -155,3 +155,13 @@
 .dussehra-toggle[aria-checked=true] .rainy-switch{background:#b96b28}
 .dussehra-toggle[aria-checked=true] .rainy-switch:after{background:#ffe4ad}
 :root[data-dussehra=true] :is(button,a,input,select,textarea):focus-visible{outline-color:#ffd180}
+
+.dussehra-greeting{display:none}
+:root[data-dussehra=true] .dussehra-greeting{display:flex;align-items:center;gap:16px;padding:17px 22px;margin-bottom:20px;border:1px solid #b87c3b;border-radius:14px;background:linear-gradient(115deg,#603022,#43242b 65%,#614026);box-shadow:0 0 12px #efa83b16;animation:dussehra-greeting-glow 4s ease-in-out infinite}
+.dussehra-greeting h2{margin:0;color:#ffdc96;font-size:23px;line-height:1.3}
+.dussehra-greeting p{margin:5px 0 0;color:#f1d6b4;font-size:14px;line-height:1.5}
+.dussehra-greeting-lamp{display:flex;flex-shrink:0;filter:drop-shadow(0 0 8px #f5b74360)}
+.dussehra-greeting-spark{margin-left:auto;color:#ffd180;font-size:28px}
+@keyframes dussehra-greeting-glow{0%,100%{box-shadow:0 0 10px #efa83b16;border-color:#a86e38}50%{box-shadow:0 0 23px #efa83b38;border-color:#e3b565}}
+@media(prefers-reduced-motion:reduce){:root[data-dussehra=true] .dussehra-greeting{animation:none}}
+@media(max-width:450px){:root[data-dussehra=true] .dussehra-greeting{padding:14px;gap:12px}.dussehra-greeting h2{font-size:21px}.dussehra-greeting p{font-size:13px}.dussehra-greeting-spark{display:none}}

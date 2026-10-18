@@ -7,3 +7,13 @@ test('ageing boundaries are disjoint, include prior years and undated dues, and 
  const result=window.FernsAnalytics.ageing([{id:'25-26-27'},{id:'99'}],dues,now);assert.equal(result.accounts.length,2);assert.equal(result.accounts[0].balance,730);assert.equal(result.accounts[0].overdue,640);assert.equal(result.accounts[1].status,'No dues loaded');assert.deepEqual(Array.from(result.bands,b=>b.amount),[80,160,160,160,160,10]);assert.equal(result.bands.reduce((n,b)=>n+b.amount,0),730);assert.ok(result.bands.every(b=>b.rows.length===1));
 });
 test('ageing never counts cleared or zero dues and handles an empty association',()=>{const result=window.FernsAnalytics.ageing([{id:'1'}],[{villa:'1',dueDate:'2020-01-01',dueAmt:500,paidAmt:500,outstandingAmt:0}],new Date(2026,9,17));assert.equal(result.accounts[0].status,'CLEARED');assert.ok(result.bands.every(b=>b.amount===0));assert.equal(window.FernsAnalytics.ageing([],[]).accounts.length,0);});
+
+test('serial defaulters use latest three prior-month dues, across years, excluding partial/NIL/cleared and short histories',()=>{
+ const villas=['1','2','3','4','5','25-26-27'].map(id=>({id}));
+ const due=(villa,date,status='Unpaid')=>({villa,dueDate:date,dueTyp:'Maintenance',dueAmt:100,paidAmt:status==='Partially paid'?20:0,outstandingAmt:100,dueStatus:status});
+ const dues=villas.flatMap(v=>['2025-11-10','2025-12-10','2026-01-10'].map(date=>due(v.id,date)));
+ dues.push(due('1','2026-02-10','Cleared'),due('2','2026-01-15','Partially paid'),{...due('3','2026-01-15','NIL'),dueAmt:0,outstandingAmt:0},due('25-26-27','2026-02-10','Cleared'));
+ const filtered=dues.filter(d=>!(d.villa==='4'&&d.dueDate==='2025-11-10'));
+ const model=trend(villas,filtered,new Date(2026,1,20));assert.deepEqual([...model.serialDefaulters],['1','5','25-26-27']);
+ assert.equal(window.FernsAnalytics.serialDefaulters(villas,[...filtered,due('5','2026-01-20','Cleared')],new Date(2026,1,20)).has('5'),false);
+});

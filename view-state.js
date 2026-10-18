@@ -4,7 +4,7 @@ window.FernsViewState=(()=>{
  const key='ferns-tab-view-v1',ephemeral=new Set(['stat-drill','payment-matching','monthly-preview','duplicate-review-receipts','duplicate-review-dues']);
  let pending=null,restoring=false,applied=false;
  try{const saved=JSON.parse(sessionStorage.getItem(key));if(saved&&saved.version===1&&typeof saved.page==='string'&&Array.isArray(saved.grids)&&Array.isArray(saved.scroll?.positions))pending=saved;}catch{}
- function clear(){pending=null;applied=false;FernsGrid.states.clear();duesView='items';communityIssueView='Issue';defaultersView='heatmap';defaultersLineMetric='count';defaultersHeatmapFocus='all';try{sessionStorage.removeItem(key)}catch{}}
+ function clear(){pending=null;applied=false;FernsGrid.states.clear();duesView='items';communityIssueView='Issue';defaultersView='heatmap';defaultersLineMetric='count';defaultersHeatmapFocus='serial';try{sessionStorage.removeItem(key)}catch{}}
  function beforeRender(){
   if(!pending||applied||(cloud.configured&&!cloudReady))return;
   if(pending.owner!==(cloud.user()?.id||'local')){clear();return;}
@@ -19,7 +19,7 @@ window.FernsViewState=(()=>{
   }
   if(['items','balances'].includes(pending.duesView))duesView=pending.duesView;
   defaultersView=pending.defaultersViewVersion===2&&['line','heatmap','ageing'].includes(pending.defaultersView)?pending.defaultersView:'heatmap';
-  if(['all','overdue','unpaid'].includes(pending.defaultersHeatmapFocus))defaultersHeatmapFocus=pending.defaultersHeatmapFocus;
+  if(pending.defaultersFocusVersion===2&&['serial','all','overdue','unpaid'].includes(pending.defaultersHeatmapFocus))defaultersHeatmapFocus=pending.defaultersHeatmapFocus;
   if(['count','rate'].includes(pending.defaultersLineMetric))defaultersLineMetric=pending.defaultersLineMetric;
   if(['Issue','Preventive maintenance'].includes(pending.issueView))communityIssueView=pending.issueView;
  }
@@ -37,7 +37,7 @@ window.FernsViewState=(()=>{
   try{const app=document.querySelector('#app'),snapshot=captureGridScroll(app).snapshot;
    // Dialogs and unsaved form contents are intentionally excluded.
    snapshot.pagePosition={x:window.scrollX,y:window.scrollY};
-   sessionStorage.setItem(key,JSON.stringify({version:1,owner:cloud.user()?.id||'local',page,grids:[...FernsGrid.states].filter(([id])=>!ephemeral.has(id)),scroll:snapshot,duesView,issueView:communityIssueView,defaultersView,defaultersLineMetric,defaultersHeatmapFocus,heatmapDefaultCountVersion:1,defaultersViewVersion:2}));
+   sessionStorage.setItem(key,JSON.stringify({version:1,owner:cloud.user()?.id||'local',page,grids:[...FernsGrid.states].filter(([id])=>!ephemeral.has(id)),scroll:snapshot,duesView,issueView:communityIssueView,defaultersView,defaultersLineMetric,defaultersHeatmapFocus,defaultersFocusVersion:2,heatmapDefaultCountVersion:1,defaultersViewVersion:2}));
   }catch{}
  }
  window.addEventListener('pagehide',save);

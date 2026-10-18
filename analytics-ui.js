@@ -1,5 +1,10 @@
 /* Current account balances by due month; this is not a historical month-end snapshot. */
 window.FernsAnalytics={
+ serialDefaulters(villas,dues,now=new Date()){
+  const cutoff=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`,byVilla=new Map();
+  for(const d of dues){if(!/^\d{4}-\d{2}-\d{2}$/.test(d.dueDate||'')||d.dueDate>=cutoff)continue;const villa=String(d.villa);if(!byVilla.has(villa))byVilla.set(villa,[]);byVilla.get(villa).push(d);}
+  return new Set(villas.map(v=>String(v.id)).filter(villa=>{const latest=(byVilla.get(villa)||[]).sort((a,b)=>b.dueDate.localeCompare(a.dueDate)||String(a.dueTyp||'').localeCompare(String(b.dueTyp||''))).slice(0,3);return latest.length===3&&latest.every(d=>d.dueStatus==='Unpaid'&&Number(d.dueAmt)>0&&Number(d.paidAmt||0)===0&&Number(d.outstandingAmt)>0);}));
+ },
  accountTrend(villas,dues,now=new Date()){
   const accounts=[...new Map(villas.map(v=>[String(v.id),v])).values()],ids=new Set(accounts.map(v=>String(v.id)));
   const cents=value=>Number.isFinite(Number(value))?Math.round(Number(value)*100):0;
@@ -15,7 +20,7 @@ window.FernsAnalytics={
    });
    return {period,label:new Date(now.getFullYear(),month,1).toLocaleDateString(undefined,{month:'short',year:'numeric'}),future,rows};
   });
-  return {accounts:accounts.length,buckets,orphanDues:dues.filter(d=>!ids.has(String(d.villa))).length};
+  return {accounts:accounts.length,buckets,serialDefaulters:window.FernsAnalytics.serialDefaulters(villas,dues,now),orphanDues:dues.filter(d=>!ids.has(String(d.villa))).length};
  }
 };
 window.FernsAnalytics.ageing=(villas,dues,now=new Date())=>{
@@ -32,7 +37,7 @@ window.FernsAnalytics.ageing=(villas,dues,now=new Date())=>{
  };
  return {accounts:accounts.map(v=>row(v,byVilla.get(String(v.id)))),bands:bands.map(b=>{const rows=accounts.map(v=>row(v,byVilla.get(String(v.id)).filter(d=>cents(d.outstandingAmt)>0&&band(d)===b.key))).filter(r=>r.balance>0);return {...b,rows,amount:rows.reduce((n,r)=>n+cents(r.balance),0)/100};})};
 };
-let defaultersView='heatmap',defaultersLineMetric='count',defaultersHeatmapFocus='all';
+let defaultersView='heatmap',defaultersLineMetric='count',defaultersHeatmapFocus='serial';
 const DEFAULTERS_VIEWS={heatmap:'Villa heatmap',line:'Defaulters by month',ageing:'Ageing'};
 function analyticsModels(){const dues=db.dues.map(d=>({...d,paidAmt:duePaid(d),outstandingAmt:dueOutstanding(d)}));return {trend:FernsAnalytics.accountTrend(db.villas,dues),ageing:FernsAnalytics.ageing(db.villas,dues)};}
 function defaultersChart(){
@@ -56,10 +61,10 @@ function defaultersLineChart(model){
 function defaultersHeatmap(model){
  const counts=new Map();for(const bucket of model.buckets)for(const row of bucket.rows){const count=counts.get(row.villa)||{all:0,unpaid:0};count.all+=row.defaultCount;count.unpaid+=row.unpaidCount;counts.set(row.villa,count);}
  const allSource=model.buckets[0].rows.map(({villa,name})=>({villa,name,defaultCount:defaultersHeatmapFocus==='unpaid'?counts.get(villa)?.unpaid||0:counts.get(villa)?.all||0})).sort((a,b)=>FernsGrid.compareVilla(a.villa,b.villa));
- const source=allSource.filter(v=>defaultersHeatmapFocus==='all'||v.defaultCount>0),key='defaulters-heatmap',config={title:'Villa heatmap',sort:'defaultCount',direction:'desc',types:{villa:'villa',defaultCount:'number'}},rows=FernsGrid.rows(key,source,config);
+ const source=allSource.filter(v=>defaultersHeatmapFocus==='serial'?model.serialDefaulters.has(v.villa):defaultersHeatmapFocus==='all'||v.defaultCount>0),key='defaulters-heatmap',config={title:'Villa heatmap',sort:'defaultCount',direction:'desc',types:{villa:'villa',defaultCount:'number'}},rows=FernsGrid.rows(key,source,config);
  const label=status=>({'Overdue':'Overdue','CLEARED':'CLEARED','No dues loaded':'No dues','Not yet due':'Not due','Upcoming month':'Upcoming'}[status]);
  const byMonth=model.buckets.map(b=>new Map(b.rows.map(r=>[r.villa,r]))),overdueAccounts=[...counts.values()].filter(c=>c.all>0).length,unpaidAccounts=[...counts.values()].filter(c=>c.unpaid>0).length;
- const focusOptions={all:'All accounts',overdue:`All overdue (${overdueAccounts})`,unpaid:`Fully unpaid only (${unpaidAccounts})`};
+ const focusOptions={serial:`Serial defaulters (${model.serialDefaulters.size})`,all:'All accounts',overdue:`All overdue (${overdueAccounts})`,unpaid:`Fully unpaid only (${unpaidAccounts})`};
  const controls=`<div class="heatmap-focus" role="group" aria-label="Heatmap focus">${Object.entries(focusOptions).map(([value,text])=>`<button type="button" class="btn ${defaultersHeatmapFocus===value?'primary':''}" data-defaulters-focus="${value}" aria-pressed="${defaultersHeatmapFocus===value}">${text}</button>`).join('')}<span class="heatmap-key"><i class="unpaid-key"></i>Fully unpaid${defaultersHeatmapFocus!=='unpaid'?' <i class="partial-key"></i>Partially paid':''}${defaultersHeatmapFocus==='all'?' <i class="cleared-key"></i>CLEARED <i class="nil-key"></i>NIL assessment <i class="not-due-key"></i>Not yet due':''}</span></div>`;
  return `${controls}<div class="defaulters-heatmap-filters">${FernsGrid.panel(key,source,config)}</div><div class="table-wrap defaulters-heatmap"><table><thead><tr>${FernsGrid.header(key,'villa','Villa account')}${FernsGrid.header(key,'defaultCount','Defaulted dues')}${model.buckets.map(b=>`<th scope="col">${esc(b.label)}</th>`).join('')}</tr></thead><tbody>${rows.map(v=>`<tr><th scope="row">${esc(v.villa)}<small>${esc(v.name)}</small></th><td class="defaulter-count" title="${defaultersHeatmapFocus==='unpaid'?'Fully unpaid overdue due items':'Overdue due items with a remaining balance'} in the displayed year">${v.defaultCount}</td>${model.buckets.map((b,index)=>{
   const original=byMonth[index].get(v.villa),show=defaultersHeatmapFocus==='all'||(defaultersHeatmapFocus==='unpaid'?original.unpaidCount>0:original.overdue>0);
@@ -68,7 +73,7 @@ function defaultersHeatmap(model){
   statDrills.set(drillKey,{title:'Villa '+v.villa+' · '+b.label,kind:'account-status',rows:[{...row,status:row.overdue>0?row.paymentState:row.status}]});
   const description=row.overdue>0&&row.paymentState==='Partially paid'?row.status+' · Partially paid':row.paymentState==='NIL assessment'?row.status+' · NIL assessment':row.status;
   return `<td><button type="button" class="heatmap-cell" data-status="${row.status}" data-payment-state="${row.paymentState}" data-stat-drill="${esc(drillKey)}" aria-label="${esc('Villa '+v.villa+' · '+b.label+' · '+description)}" data-trend-tooltip="${esc('Villa '+v.villa+' · '+b.label+'\n'+description+(row.overdue>0?'\n'+row.paymentState:'')+'\nOutstanding: '+money(row.balance)+'\nOverdue: '+money(row.overdue))}">${row.overdue>0?money(row.overdue):label(row.status)}</button></td>`;
- }).join('')}</tr>`).join('')}</tbody></table>${rows.length?'':'<div class="empty">No villa accounts match your focus and search.</div>'}</div><p class="defaulters-note">Showing ${rows.length} of ${allSource.length} villa accounts · ${defaultersHeatmapFocus==='unpaid'?'Counts and amounts include only fully unpaid overdue due items.':'Defaulted dues counts overdue due items, including partially paid items.'} Displayed year only. Select a coloured month cell for details.</p>`;
+ }).join('')}</tr>`).join('')}</tbody></table>${rows.length?'':'<div class="empty">No villa accounts match your focus and search.</div>'}</div><p class="defaulters-note">Showing ${rows.length} of ${allSource.length} villa accounts · ${defaultersHeatmapFocus==='serial'?'Serial defaulters have all of their last three dues before the current month Unpaid (all due types; prior years included). ':''}${defaultersHeatmapFocus==='unpaid'?'Counts and amounts include only fully unpaid overdue due items.':'Defaulted dues counts overdue due items, including partially paid items.'} Displayed year only. Select a coloured month cell for details.</p>`;
 }
 function defaultersAgeingChart(model){
  const maximum=Math.max(1,...model.bands.map(b=>b.amount));
@@ -77,10 +82,10 @@ function defaultersAgeingChart(model){
 if(typeof document!=='undefined')document.addEventListener('click',event=>{
  const target=event.target.closest('[data-defaulters-view],[data-defaulters-metric],[data-defaulters-focus]');if(!target||!canOpenPage('Analytics'))return;
  if(target.dataset.defaultersView&&Object.hasOwn(DEFAULTERS_VIEWS,target.dataset.defaultersView))defaultersView=target.dataset.defaultersView;
- else if(['all','overdue','unpaid'].includes(target.dataset.defaultersFocus))defaultersHeatmapFocus=target.dataset.defaultersFocus;
+ else if(['serial','all','overdue','unpaid'].includes(target.dataset.defaultersFocus))defaultersHeatmapFocus=target.dataset.defaultersFocus;
  else if(['count','rate'].includes(target.dataset.defaultersMetric))defaultersLineMetric=target.dataset.defaultersMetric;else return;
  const attribute=target.hasAttribute('data-defaulters-view')?'data-defaulters-view':target.hasAttribute('data-defaulters-focus')?'data-defaulters-focus':'data-defaulters-metric',value=target.getAttribute(attribute);
  withGridScroll(()=>{render();document.querySelector(`[${attribute}="${value}"]`)?.focus({preventScroll:true});});
 });
 
-if(typeof document!=='undefined')document.addEventListener('click',event=>{if(event.target.closest('[data-grid="defaulters-heatmap"][data-grid-reset]'))defaultersHeatmapFocus='all';},true);
+if(typeof document!=='undefined')document.addEventListener('click',event=>{if(event.target.closest('[data-grid="defaulters-heatmap"][data-grid-reset]'))defaultersHeatmapFocus='serial';},true);

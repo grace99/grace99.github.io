@@ -136,3 +136,22 @@
 @keyframes ferns-rainfall{from{background-position:0 0}to{background-position:-28px 80px}}
 @media(prefers-reduced-motion:reduce){:root[data-rainy-day=true] body:before{animation:none}.rainy-switch:after{transition:none}}
 @media(max-width:450px){.rainy-toggle{gap:3px;padding:5px}.rainy-switch{width:25px}}
+
+/* Dussehra: marigold, brass and festive burgundy; financial status colours stay intact. */
+:root[data-dussehra=true]{--green:#ffd180;--ink:#fff0d8;--muted:#d8bea5;--line:#795047;--bg:#281719;--surface:#3c2528;--raised:#513236;--field:#301e22;--accent-soft:#63402d;--shadow:0 8px 28px #14070840}
+:root[data-dussehra=true] body{background:radial-gradient(ellipse at 90% 0,#81502a55,transparent 55%),var(--bg)}
+:root[data-dussehra=true] :is(.sidebar,.topbar){background:#321d22f5;border-color:#936239}
+:root[data-dussehra=true] .brand-mark{background:linear-gradient(135deg,#ffcf76,#d87527);color:#542513;box-shadow:0 0 18px #f4ab3433}
+:root[data-dussehra=true] .topbar{border-bottom:2px solid #b87c3b}
+:root[data-dussehra=true] :is(.btn.primary,.nav-item.active,.month-button.selected){background:linear-gradient(120deg,#8c3e27,#65302b);border-color:#d9a154;color:#fff0ce}
+:root[data-dussehra=true] :is(th,.payments-table thead th:last-child,.dues-table thead th:last-child){background:#523038;color:#ffe2ad}
+:root[data-dussehra=true] :is(td,.icon-btn,.btn){color:#f3ddc7}
+:root[data-dussehra=true] :is(.text-btn,.account-status,.stat-foot b){color:#ffd180}
+:root[data-dussehra=true] .payment-detail td{background:#452a2a}
+:root[data-dussehra=true] :is(.grid-filters,.summary-row,.split-receipt,#split-totals){background:#452b2c;border-color:var(--line);color:var(--ink)}
+:root[data-dussehra=true] .chart text{fill:#d8bea5}
+:root[data-dussehra=true] .content:before{content:'';display:block;height:15px;margin:-4px 0 15px;pointer-events:none;background:radial-gradient(circle at 8px 5px,#f5ab37 0 4px,transparent 5px) 0 0/32px 14px repeat-x,radial-gradient(ellipse at 24px 3px,#8ca25d 0 4px,transparent 5px) 0 0/32px 14px repeat-x;border-top:1px solid #b9843f;opacity:.9}
+:root[data-dussehra=true] .dussehra-toggle{color:#ffd180;filter:drop-shadow(0 0 4px #f4ab3430)}
+.dussehra-toggle[aria-checked=true] .rainy-switch{background:#b96b28}
+.dussehra-toggle[aria-checked=true] .rainy-switch:after{background:#ffe4ad}
+:root[data-dussehra=true] :is(button,a,input,select,textarea):focus-visible{outline-color:#ffd180}

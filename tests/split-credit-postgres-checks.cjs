@@ -1,0 +1,25 @@
+const fs=require('node:fs');const path=require('node:path');const assert=require('node:assert/strict');
+module.exports=async db=>{
+ const sql=fs.readFileSync(path.join(__dirname,'../supabase/020_split_payment_credit.sql'),'utf8');
+ await db.exec('RESET ROLE');await db.exec(sql);await db.exec(sql);
+ await db.exec(`SET ROLE authenticated;SET test.uid='11111111-1111-1111-1111-111111111111'`);
+ const receipt=(await db.query(`INSERT INTO public."VillaPmt"("Villa","PmtDate","PmtAmt","PmtRemarks","UTR") VALUES ('50','2028-01-15',2000.35,'Credit test','credit-test') RETURNING id`)).rows[0].id;
+ const parts=JSON.stringify([{villa:'50',month:'2028-01',amount:'800.10'},{villa:'25-26-27',month:'2028-02',amount:'800.20'}]);
+ const split=async(id,amount,items)=>(await db.query(`SELECT public.fernsvilla_split_payment($1,$2,$3::jsonb) AS value`,[id,amount,items])).rows[0].value;
+ await assert.rejects(split(receipt,2000.35,JSON.stringify([{month:'2028-01',amount:1500},{month:'2028-02',amount:1500}])),/cannot exceed/);
+ const result=await split(receipt,2000.35,parts);assert.equal(result.payments.length,3);
+ const credit=result.payments.find(p=>p.AllocationMonth===null);assert.equal(credit.Villa,'50');assert.equal(Number(credit.PmtAmt),400.05);assert.equal(credit.PaymentStatus,'Unmatched');
+ assert.equal(Math.round(result.payments.reduce((sum,p)=>sum+Number(p.PmtAmt),0)*100),200035);
+ assert.ok(result.payments.every(p=>p.PmtRemarks==='Credit test'&&p.UTR==='credit-test'&&p.PmtDate==='2028-01-15'));
+ const retry=await split(receipt,2000.35,parts);assert.equal(retry.already_split,true);assert.deepEqual(retry.payments.map(p=>p.id),result.payments.map(p=>p.id));
+ await db.query(`INSERT INTO public."villaDues"(villa,"dueTyp","dueDate","dueAmt") VALUES ('50','Credit test','2028-04-01',500)`);
+ await db.query(`SELECT public.fernsvilla_allocate_payment('50','Credit test','2028-04-01',$1,400.05,0)`,[credit.id]);
+ assert.equal(Number((await db.query(`SELECT "paidAmt" FROM public."villaDues" WHERE villa='50' AND "dueTyp"='Credit test'`)).rows[0].paidAmt),400.05);
+ await db.exec('RESET ROLE');
+ const unassigned=(await db.query(`INSERT INTO public."VillaPmt"("PmtAmt") VALUES (2000.35) RETURNING id`)).rows[0].id;
+ await db.exec('SET ROLE authenticated');
+ await assert.rejects(split(unassigned,2000.35,parts),/Map the original/);
+ assert.equal((await db.query(`SELECT "IsSplitParent" FROM public."VillaPmt" WHERE id=$1`,[unassigned])).rows[0].IsSplitParent,false);
+ await db.exec(`SET test.uid='22222222-2222-2222-2222-222222222222'`);await assert.rejects(split(unassigned,2000.35,parts),/access required/);
+ await db.exec('RESET ROLE');console.log('PASS split credit: exact remainder, cross-villa conservation, unchanged receipt details, retry, over-allocation rollback, unmapped/resident denial, credit usable in a later month');
+};

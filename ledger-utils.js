@@ -14,7 +14,7 @@ window.FernsLedger = {
       const target=JSON.stringify([villa,part.month]);if(targets.has(target))throw Error('Use one allocation per villa and month.');targets.add(target);
       const cents=this.cents(part.amount);if(cents<=0)throw Error('Every allocation must be greater than zero.');sum+=cents;
       return {...(villa!=null?{villa}:{}),month:part.month,amount:(cents/100).toFixed(2)};
-    });if(sum!==this.cents(total))throw Error('Allocated amounts must equal the original payment amount.');return result;
+    });if(sum>this.cents(total))throw Error('Allocated amounts cannot exceed the original payment amount.');if(sum<this.cents(total)&&!defaultVilla)throw Error('Map the original payment to a villa before leaving a credit.');return result;
   },
   monthlyPreview(villas,existing,{period,villaField,periodField}) {
     if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(period))throw Error('Choose a valid billing month.');
